@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+rm -rf build
+
 mkdir -p build
 
 CC=aarch64-linux-gnu-gcc

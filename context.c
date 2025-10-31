@@ -121,38 +121,38 @@ addr_t _os_save_context()
 {
     addr_t ret;
     __asm__ volatile(
-        // 프레임 공간 확보: sp' = sp - sizeof(_os_context_t)
-        "mov    x9, sp\n\t"
-        "sub    x9, x9, %c[SZ]\n\t"
+        // 컨텍스트 프레임 확보: sp' = sp - sizeof(_os_context_t)
+        "sub    sp, sp, %c[SZ]\n\t"
 
-         // x0~x30 저장 (x9는 포인터로만 사용; x8,x9 순서 주의)
-        "stp    x0, x1,  [x9, #(0*16)]\n\t"
-        "stp    x2, x3,  [x9, #(1*16)]\n\t"
-        "stp    x4, x5,  [x9, #(2*16)]\n\t"
-        "stp    x6, x7,  [x9, #(3*16)]\n\t"
-        "stp    x8, x9,  [x9, #(4*16)]\n\t" // x9 저장은 여기서 처리
-        "stp    x10,x11, [x9, #(5*16)]\n\t"
-        "stp    x12,x13, [x9, #(6*16)]\n\t"
-        "stp    x14,x15, [x9, #(7*16)]\n\t"
-        "stp    x16,x17, [x9, #(8*16)]\n\t"
-        "stp    x18,x19, [x9, #(9*16)]\n\t"
-        "stp    x20,x21, [x9, #(10*16)]\n\t"
-        "stp    x22,x23, [x9, #(11*16)]\n\t"
-        "stp    x24,x25, [x9, #(12*16)]\n\t"
-        "stp    x26,x27, [x9, #(13*16)]\n\t"
-        "stp    x28,x29, [x9, #(14*16)]\n\t"
-        "str    x30,     [x9, #(15*16)]\n\t"
+        // x0~x30 저장 (SP 자체를 포인터로 활용)
+        "stp    x0,  x1,  [sp, #(0*16)]\n\t"
+        "stp    x2,  x3,  [sp, #(1*16)]\n\t"
+        "stp    x4,  x5,  [sp, #(2*16)]\n\t"
+        "stp    x6,  x7,  [sp, #(3*16)]\n\t"
+        "stp    x8,  x9,  [sp, #(4*16)]\n\t"
+        "stp    x10, x11, [sp, #(5*16)]\n\t"
+        "stp    x12, x13, [sp, #(6*16)]\n\t"
+        "stp    x14, x15, [sp, #(7*16)]\n\t"
+        "stp    x16, x17, [sp, #(8*16)]\n\t"
+        "stp    x18, x19, [sp, #(9*16)]\n\t"
+        "stp    x20, x21, [sp, #(10*16)]\n\t"
+        "stp    x22, x23, [sp, #(11*16)]\n\t"
+        "stp    x24, x25, [sp, #(12*16)]\n\t"
+        "stp    x26, x27, [sp, #(13*16)]\n\t"
+        "stp    x28, x29, [sp, #(14*16)]\n\t"
+        "str    x30,      [sp, #(15*16)]\n\t"
 
         // SP/ELR/SPSR 저장
-        "mov    x10, sp\n\t"
-        "str    x10,      [x9, #%c[OFF_SP]]\n\t"
+        "add    x9, sp, %c[SZ]\n\t"          // x9 = 원래 sp
+        "str    x9,       [sp, #%c[OFF_SP]]\n\t"
         "mrs    x10, ELR_EL1\n\t"
-        "str    x10,      [x9, #%c[OFF_ELR]]\n\t"
+        "str    x10,      [sp, #%c[OFF_ELR]]\n\t"
         "mrs    x10, SPSR_EL1\n\t"
-        "str    x10,      [x9, #%c[OFF_SPSR]]\n\t"
+        "str    x10,      [sp, #%c[OFF_SPSR]]\n\t"
 
-        // 새 SP를 프레임 시작으로 업데이트하고, 그 주소를 반환
-        "mov    %0, x9\n\t"
+        // 호출자에게 컨텍스트 포인터 전달 후 원래 스택 복원
+        "mov    %0, sp\n\t"
+        "add    sp, sp, %c[SZ]\n\t"
         : "=r"(ret)
         : [SZ]      "i"(sizeof(_os_context_t)),
           [OFF_SP]  "i"(31*8),         // 248
