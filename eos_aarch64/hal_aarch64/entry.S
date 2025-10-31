@@ -6,19 +6,18 @@
 .section .text, "ax"
 .global _start
 _start:
-    /* 1. 모든 인터럽트 마스크 */
-    msr     DAIFSet, #0xf
+    // Deactivate all exceptions
+    msr     DAIFSet, #0xf 
 
-    /* 2. EL2 → EL1 강하(필요한 경우) */
     mrs     x0, CurrentEL
     lsr     x0, x0, #2
     cmp     x0, #2
-    b.ne    1f
+    b.ne    el1_entry
     mov     x1, #(1 << 31)
     msr     HCR_EL2, x1
     mov     x1, #0x3C5
     msr     SPSR_EL2, x1
-    adr     x1, 1f
+    adr     x1, el1_entry
     bic     x1, x1, #0b11
     isb
     msr     ELR_EL2, x1
@@ -36,26 +35,30 @@ _start:
     msr     CNTKCTL_EL1, xzr
     eret
 
-1:
+el1_entry:
     ldr     x0, =__stack_top
     and     x0, x0, #-16
     mov     sp, x0
     ldr     x1, =__bss_start
     ldr     x2, =__bss_end
-0:  cmp     x1, x2
-    b.hs    2f
+
+bss_clear_loop:  
+    cmp     x1, x2
+    b.hs    bss_clear_done
     str     xzr, [x1], #8
-    b       0b
-2:
-    /* 5. 예외 벡터 테이블 등록 */
+    b       bss_clear_loop
+
+bss_clear_done:
     ldr     x0, =__vectors_start
     msr     VBAR_EL1, x0
     isb
     
-    /* 6. C 초기화 진입 */
+os_init: 
     bl      _os_initialization
-3:  wfe
-    b       3b
+
+idle_loop:  
+    wfe
+    b       idle_loop
 
 /* ===========================
  * 예외 벡터 테이블 (2KiB align)
