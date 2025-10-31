@@ -2,13 +2,12 @@
 #
 # Choose the Target
 #
-#	* Emulation on IA32/Linux
-#	* smdk2440 board (ARM)
+#	* QEMU (aarch64)
+#	* RUBIKPI (aarch64)
 #	* ...
 #
 ##################################################################
-# export HAL := smdk2440
-export HAL := linux
+export HAL := aarch64
 
 ##################################################################
 #
