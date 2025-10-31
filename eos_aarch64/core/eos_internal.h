@@ -20,7 +20,7 @@
  * Initialization module
  ********************************************************/
 
-void _os_init();		// Initialize OS
+void _os_init();		    // Initialize OS
 void _os_init_hal();		// Initialize HAL
 void _os_init_icb_table();	// Initialize ICB table structure
 void _os_init_scheduler();	// Initialize bitmap scheduler module

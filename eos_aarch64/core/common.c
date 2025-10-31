@@ -11,7 +11,6 @@
 
 #define PRINT_BUFFER_SIZE 256
 
-
 void eos_printf(const char *fmt, ...)
 {
     va_list args;
@@ -24,13 +23,8 @@ void eos_printf(const char *fmt, ...)
     _os_serial_puts(printbuffer);
 }
 
-
-void _os_add_node_tail(_os_node_t **head, _os_node_t *new_node){
-// 역할: 연결 리스트의 맨 뒤에 새 노드를 삽입
-// head: 연결 리스트의 헤드 노드를 가리키는 포인터 변수의 주소 -> *head는 헤드 노드의 주소, **head는 헤드 노드 자체
-// new_node: 새로 삽입할 노드의 포인터 변수 -> *new_node는 삽입할 노드 자체
-// input으로, head와 new_node는 각각 이중 포인터와 단일 포인터로 전달됨
-
+void _os_add_node_tail(_os_node_t **head, _os_node_t *new_node) 
+{
     if (*head) {
         new_node->prev = (*head)->prev;
         (new_node->prev)->next = new_node;

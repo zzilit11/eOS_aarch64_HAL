@@ -13,7 +13,8 @@
 void eos_init_mqueue(eos_mqueue_t *mq, void *queue_start, int16u_t queue_size, int8u_t msg_size, int8u_t queue_type)
 {
     if (mq == NULL || queue_start == NULL || queue_size == 0 || msg_size == 0) {
-        PRINT("eos_init_mqueue: invalid args mq=%p buf=%p size=%u msg=%u\n", (void*)mq, queue_start, (int32u_t)queue_size, (int32u_t)msg_size);
+        PRINT("eos_init_mqueue: invalid args mq=%p buf=%p size=%u msg=%u\n", 
+            (void*)mq, queue_start, (int32u_t)queue_size, (int32u_t)msg_size);
         return;
     }
     // To be filled by students: Project 4
@@ -107,5 +108,4 @@ int8u_t eos_receive_message(eos_mqueue_t *mq, void *message, int32s_t timeout)
     eos_release_semaphore(&mq->putsem);
 
     return mq->msg_size;
-
 }
