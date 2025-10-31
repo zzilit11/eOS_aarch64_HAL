@@ -1,0 +1,288 @@
+#include "early_uart.h"
+#include "interrupt.h"
+#include "timer.h"
+#include "context.h"
+
+typedef struct {
+    addr_t sp;
+    int state;
+} task_control_t;
+
+static task_control_t tasks[2];
+static int current_task = 0;
+extern int32u_t read_gicc_iar(void), read_gicc_eoir(void), read_gicc_pmr(void), read_gicc_ctlr(void);
+
+
+void dump_vbar_register(void) {
+    int64u_t vbar_val;
+    __asm__ volatile ("mrs %0, VBAR_EL1" : "=r" (vbar_val));
+    early_uart_puts("[debug] VBAR_EL1=");
+    uart_put_hex(vbar_val, 16);   // 16자리 HEX로 출력
+    early_uart_putc('\n');
+}
+
+void dump_daif_register(void) {
+    int64u_t daif_val;
+    __asm__ volatile ("mrs %0, DAIF" : "=r" (daif_val));
+    early_uart_puts("[debug] DAIF=");
+    uart_put_hex(daif_val, 8);
+    early_uart_putc('\n');
+}
+
+extern int32u_t read_cntp_ctl_el0(void); // 이미 있으면 바로 사용
+extern int32u_t read_cntp_tval_el0(void);
+
+void dump_timer_registers(void) {
+    early_uart_puts("[debug] CNTP_CTL_EL0=");
+    uart_put_hex(read_cntp_ctl_el0(), 8);
+    early_uart_puts("  CNTP_TVAL_EL0=");
+    uart_put_hex(read_cntp_tval_el0(), 8);
+    early_uart_putc('\n');
+}
+
+
+
+void debug_print_task_context(int task_idx) {
+    early_uart_puts("[test] Dump context for task ");
+    early_uart_putc('0' + task_idx);
+    early_uart_putc('\n');
+}
+
+void dump_context_struct(const char *tag, int id, addr_t sp) {
+    early_uart_puts("[DUMP] ");
+    early_uart_puts(tag);
+    early_uart_puts(" task");
+    uart_put_hex(id, 1); // 1자리 16진수로 task index
+    early_uart_puts(" @ ");
+    uart_put_hex((int64u_t)sp, 8);
+    early_uart_putc('\n');
+    int64u_t *p = (int64u_t *)sp;
+    for(int i=0; i<34; i++) {
+        uart_put_hex(p[i], 8);
+        early_uart_puts(" ");
+    }
+    early_uart_putc('\n');
+}
+
+void dump_all_contexts(const char *when) {
+    dump_context_struct(when, 0, tasks[0].sp);
+    dump_context_struct(when, 1, tasks[1].sp);
+}
+
+
+void save_current_task_sp(addr_t sp) {
+    tasks[current_task].sp = sp;
+}
+
+void debug_restore_context(addr_t sp, int task_id) {
+    dump_context_struct("restore PRE", task_id, sp);
+    _os_restore_context(sp);
+}
+
+void validate_save_addr(addr_t saving_sp, int task_idx) {
+    early_uart_puts("[CHECK] save_current_task_sp 인자 (saving_sp) = ");
+    uart_put_hex((int64u_t)saving_sp, 8); early_uart_putc('\n');
+    early_uart_puts("[CHECK] 현재 tasks[");
+    early_uart_putc('0' + task_idx);
+    early_uart_puts("].sp  = ");
+    uart_put_hex((int64u_t)tasks[task_idx].sp, 8); early_uart_putc('\n');
+}
+
+// Interrupt handler
+void _os_common_interrupt_handler(int32u_t irq)
+{
+        early_uart_puts("[ISR] Interrupt received: ");
+        uart_put_hex(irq, 2);        
+        early_uart_putc('\n');
+
+        early_uart_puts("[ISR] Starting point\n");
+        dump_gic_irq30_state();
+        dump_gic_irq0_31_state();
+        // DAIF 상태
+        early_uart_puts("[ISR] DAIF: ");
+        dump_daif_register();
+
+        dump_timer_registers();
+        
+        early_uart_puts("[ISR GIC] IAR=");
+        uart_put_hex(read_gicc_iar(), 8);
+        early_uart_puts(" EOIR=");
+        uart_put_hex(read_gicc_eoir(), 8);
+        early_uart_puts(" PMR=");
+        uart_put_hex(read_gicc_pmr(), 8);
+        early_uart_puts(" CTLR=");
+        uart_put_hex(read_gicc_ctlr(), 8);
+        early_uart_putc('\n');
+
+        early_uart_puts("[ISR] >>> context dump before switch\n");
+
+        dump_all_contexts("ISR_ENTRY");
+
+    if (irq == IRQ_CNTP) {
+        // Save context
+        
+        dump_all_contexts("BEFORE SAVE");
+
+        addr_t saved_sp = _os_save_context((_os_context_t *)tasks[current_task].sp);
+        validate_save_addr(saved_sp, current_task);
+        save_current_task_sp(saved_sp);
+        dump_context_struct("AFTER SAVE", current_task, tasks[current_task].sp);
+        
+
+        dump_all_contexts("\n\nAFTER SAVE");
+
+
+        // 반드시 타이머 rearming
+        early_uart_puts("[ISR] Before timer rearm\n");
+        dump_gic_irq0_31_state();
+        _timer_rearm();
+        early_uart_puts("[ISR] After timer rearm\n");
+        dump_timer_registers();
+        dump_gic_irq30_state();
+        // 태스크 전환
+        current_task = (current_task + 1) % 2;
+        dump_all_contexts("POST_SWITCH");
+
+        early_uart_puts("[ISR] Switching to task ");
+        early_uart_putc('0' + current_task);
+        early_uart_puts("\n");
+        debug_print_task_context(current_task);
+
+        dump_all_contexts("PRE_RESTORE");
+
+        // Context 복구 (이후 dead code 불가)
+        early_uart_puts("[ISR] Call restore_context for task ");
+        uart_put_hex(current_task, 1); 
+        early_uart_putc('\n');
+        debug_restore_context(tasks[current_task].sp, current_task);
+
+        
+    }
+    
+    // 여기는 도달하지 않음 (_os_restore_context가 eret하므로)
+}
+
+/********************************************************
+ * 2. Task Entry Functions (테스트용)
+ ********************************************************/
+void task_func1(void *arg) {
+    static int loop1 = 0;
+    while (1) {
+        early_uart_puts("[Task1] Running...\n");
+        uart_put_hex(loop1++, 4); early_uart_putc('\n');
+
+        
+        early_uart_puts("[DBG] DAIF before wfi: ");
+        dump_daif_register();
+
+        int64u_t spsr;
+        __asm__ volatile ("mrs %0, SPSR_EL1" : "=r" (spsr));
+        early_uart_puts("[DBG] SPSR_EL1 before wfi: ");
+        uart_put_hex(spsr, 8);
+        early_uart_putc('\n');
+
+        early_uart_puts("[DBG] Task 1 loop, timer regs: ");
+        dump_timer_registers();
+
+        early_uart_puts("[DBG] Task 2 going to WFI...\n");
+        dump_daif_register();
+        early_uart_puts("[DBG] TVAL before wfi = ");
+        dump_timer_registers();        
+        __asm__ volatile("wfi");
+        // wfi 이후
+        early_uart_puts("[DBG] after wfi = ");        
+        dump_timer_registers();
+
+        __asm__ volatile("wfi");
+    }
+}
+
+void task_func2(void *arg) {
+    static int loop2 = 0;
+    while (1) {
+        early_uart_puts("[Task2] Running... Loop: ");
+        uart_put_hex(loop2++, 4); early_uart_putc('\n');
+
+        early_uart_puts("[DBG] DAIF before wfi: ");
+        dump_daif_register();
+
+        int64u_t spsr;
+        __asm__ volatile ("mrs %0, SPSR_EL1" : "=r" (spsr));
+        early_uart_puts("[DBG] SPSR_EL1 before wfi: ");
+        uart_put_hex(spsr, 8);
+        early_uart_putc('\n');
+
+        early_uart_puts("[DBG] Task 2 loop, timer regs: ");
+        dump_timer_registers();
+
+        // wfi 전후 CNTP_TVAL_EL0 체크용
+        early_uart_puts("[DBG] Task 2 going to WFI...\n");
+        dump_daif_register();
+        early_uart_puts("[DBG] TVAL before wfi = ");
+        dump_timer_registers();
+        __asm__ volatile("wfi");
+        // wfi 이후
+        early_uart_puts("[DBG] after wfi = ");        
+        dump_timer_registers();
+    }
+}
+
+
+// 초기화
+extern void _os_restore_context(addr_t sp);
+
+
+void _os_initialization(void) {
+    dump_vbar_register();
+
+    early_uart_init(EARLY_UART_CLOCK_HZ);
+    early_uart_puts("[boot] early uart up\n");
+    _os_serial_puts("[boot] serial up\n");
+
+    early_uart_puts("[boot] Right after boot\n");
+    dump_gic_irq0_31_state();
+    
+    
+    /* 이후 GIC, Generic Timer 등 HAL 초기화… */
+    _gic_init();
+    early_uart_puts("[boot] GIC initialized\n");
+
+    _os_init_timer();
+    early_uart_puts("[boot] Timer initialized\n");
+
+    early_uart_puts("[boot] Before Interrupts enabled\n");
+    dump_daif_register();
+    eos_enable_interrupt();
+    early_uart_puts("[boot] Interrupts enabled\n");
+
+    dump_vbar_register();
+
+    dump_daif_register();
+    dump_timer_registers();
+
+
+    /****************************************************
+     *  Context 관련 테스트
+     ****************************************************/
+    /* 컨텍스트 생성 */
+    tasks[0].sp = _os_create_context((addr_t)0x40200000, 4096, task_func1, (void *)0x12345678);
+    tasks[1].sp = _os_create_context((addr_t)0x40201000, 4096, task_func2, (void *)0x87654321);
+    tasks[0].state = 1;  // Task1 먼저 실행
+    tasks[1].state = 0;
+    dump_all_contexts("AFTER CREATE");
+
+    early_uart_puts("[boot] Contexts created\n");
+
+    for (int i = 0; i < 2; i++) {
+        early_uart_puts("[boot] After context create: task");
+        uart_put_hex(i, 1); early_uart_putc('\n');
+        debug_print_task_context(i);
+    }
+
+    /* Task1 진입 */
+    current_task = 0;
+    early_uart_puts("[boot] Starting Task1...\n");
+    _os_restore_context(tasks[0].sp);
+
+    while (1);    
+}
