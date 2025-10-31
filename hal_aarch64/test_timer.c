@@ -1,4 +1,4 @@
-#include "early_uart.h"
+#include "uart.h"
 #include "interrupt.h"
 #include "timer.h"
 #include "context.h"

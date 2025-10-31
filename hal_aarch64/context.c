@@ -1,5 +1,5 @@
 #include "type.h"
-#include "early_uart.h"
+#include "uart.h"
 #include "context.h"
 #include <stddef.h>
 /*

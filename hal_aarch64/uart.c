@@ -8,7 +8,7 @@
     - 간단한 테스트 (Hello, World!)
 */
 
-#include "early_uart.h"
+#include "uart.h"
 #include "mmio.h"
 #include <stdarg.h>
 

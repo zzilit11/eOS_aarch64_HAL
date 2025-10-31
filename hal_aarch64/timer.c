@@ -2,7 +2,7 @@
 #include "mmio.h"
 #include "interrupt.h"
 #include "timer.h"
-#include "early_uart.h"
+#include "uart.h"
 
 /* Reload interval (tick period) */
 static int32u_t _reload;
