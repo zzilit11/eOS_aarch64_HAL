@@ -51,9 +51,9 @@ static inline int _gic_eoimode_split(void)
 
 void _gic_init(void);
 void eos_enable_irq_line(int32s_t irq);  
-void eos_enable_interrupt(void);
-int64u_t eos_disable_interrupt(void);
-void eos_restore_interrupt(int64u_t flag);
+void hal_enable_interrupt(void);
+int64u_t hal_disable_interrupt(void);
+void hal_restore_interrupt(int64u_t flag);
 
 int32s_t eos_get_irq(void);
 void eos_ack_irq(int32u_t irq);

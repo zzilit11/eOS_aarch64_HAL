@@ -77,7 +77,4 @@ void _os_init_timer(void)
 
     // 4) GIC에서 CNTP PPI 언마스크
     eos_enable_irq_line(IRQ_CNTP);
-
-
- 
 }

@@ -234,7 +234,7 @@ el1_sync_sp0:
 el1_irq_sp0:   
     wfe
     b el1_irq_sp0
-el1_fiq_sp0
+el1_fiq_sp0:
     wfe
     b el1_fiq_sp0
 el1_serr_sp0:  
@@ -252,16 +252,16 @@ el1_serr_spx:
 el1_sync_el0:  
     wfe
     b el1_sync_el0
-el1_irq_el0
+el1_irq_el0:
     wfe
     b el1_irq_el0
-el1_fiq_el0
+el1_fiq_el0:
     wfe
     b el1_fiq_el0
-el1_serr_el0
+el1_serr_el0:
     wfe
     b el1_serr_el0
-el1_sync_a32
+el1_sync_a32:
     wfe
     b el1_sync_a32
 el1_irq_a32:   

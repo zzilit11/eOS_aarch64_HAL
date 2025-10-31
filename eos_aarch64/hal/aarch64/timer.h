@@ -18,7 +18,6 @@ int32u_t read_cntp_tval_el0(void);
 void write_cntp_tval_el0(int32u_t val);
 void write_cntp_ctl_el0(int32u_t val);
 
-
 /* Initialize the Generic Timer */
 void _os_init_timer(void);
 

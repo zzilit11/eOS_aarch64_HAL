@@ -226,7 +226,7 @@ void _os_initialization(void) {
     _os_init_timer();
     early_uart_puts("[boot] Timer initialized\n");
 
-    eos_enable_interrupt();
+    hal_enable_interrupt();
     early_uart_puts("[boot] Interrupts enabled\n");
 
 

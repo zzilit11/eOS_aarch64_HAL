@@ -47,12 +47,12 @@ void eos_disable_irq_line(int32s_t irq)
 }
 
 /* -------------------- CPU Interrupt control -------------------- */
-void eos_enable_interrupt(void)
+void hal_enable_interrupt(void)
 {
     __asm__ volatile ("msr daifclr, #2");
 }
 
-int64u_t eos_disable_interrupt(void)
+int64u_t hal_disable_interrupt(void)
 {
     int64u_t prev;
     __asm__ volatile("mrs %0, daif" : "=r" (prev) :: "memory");
@@ -61,7 +61,7 @@ int64u_t eos_disable_interrupt(void)
     return prev;
 }
 
-void eos_restore_interrupt(int64u_t flag)
+void hal_restore_interrupt(int64u_t flag)
 {
     __asm__ volatile("msr DAIF, %0" :: "r"(flag) : "memory");
     __asm__ volatile("isb" ::: "memory");
