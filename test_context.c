@@ -4,6 +4,9 @@
 #include "context.h"
 #include "mmio.h"
 
+__attribute__((noreturn))
+void _os_restore_and_eret(addr_t sp);
+
 typedef struct {
     addr_t sp;
     int state;
@@ -55,12 +58,17 @@ void dump_context_struct(const int tag, int id, addr_t sp) {
 
     // 1) GPR x0..x30
     for (int i = 0; i < 31; i++) {
-        early_uart_puts("x"); 
-        // 숫자 자리 정렬
-        if (i < 10) early_uart_putc('0' + i);
-        else { early_uart_putc('1'); early_uart_putc('0' + (i - 10)); }
+        early_uart_puts("x");
+        if (i < 10) {
+            early_uart_putc('0' + i);
+        } else {
+            int tens = i / 10;
+            int ones = i % 10;
+            early_uart_putc('0' + tens);
+            early_uart_putc('0' + ones);
+        }
         early_uart_puts("  = 0x");
-        uart_put_hex(*(int64u_t*)((char*)sp + 0 + i*8), 8);
+        uart_put_hex(*(int64u_t *)((char *)sp + i * 8), 8); // 기존 규격 유지
         early_uart_putc('\n');
     }
 
@@ -128,62 +136,42 @@ void validate_save_addr(addr_t saving_sp, int task_idx) {
     uart_put_hex((int64u_t)tasks[task_idx].sp, 8); early_uart_putc('\n');
 }
 
-// Interrupt handler
-void _os_common_interrupt_handler(int32u_t irq)
-{
-    early_uart_puts("[ISR] Interrupt received: ");
-    _os_serial_printf("IRQ=0x%x\n", irq);       
-    early_uart_putc('\n');
-
-    early_uart_puts("[ISR] Starting point\n");
-
-    int32u_t id = (irq & 0x3FF);    // INTID 추출 (v2: 하위 10비트)
-    _os_serial_printf("[ISR] IRQ ID: %d\n", id);
-
+addr_t _os_common_interrupt_handler(int32u_t irq, addr_t saved_context_ptr) {
+    // 1) INTID 추출 및 spurious 필터
+    int32u_t id = (irq & 0x3FF);    // GICv2: 하위 10비트
     if (id >= 1020) {
-        return;   // 스푸리어스면 EOI도 치지 말고 바로 복귀
+        return saved_context_ptr;  // Spurious -> 현재 컨텍스트 복원
     }
-
-
 
     if (id == IRQ_CNTP) {
-        // Save context
-        debug_restore_context(tasks[current_task].sp, current_task);
-        
-        addr_t saved_sp = _os_save_context();
-        _os_serial_printf("\n\n[ISR] Right after save_context");
-        debug_restore_context(tasks[current_task].sp, current_task);
-        early_uart_puts("\n\n");
-        debug_restore_context(saved_sp, current_task);      
-        
-        save_current_task_sp(saved_sp);
+        // 2) save
+        save_current_task_sp(saved_context_ptr);
 
-        validate_save_addr(saved_sp, current_task);
-        
-        early_uart_puts("[ISR] timer rearm\n");
+        // 3) 최소 디버그(옵션)
+        _os_serial_printf("[ISR] id=%u cur=%d\n", id, current_task);
+        debug_restore_context(saved_context_ptr, current_task);
+
+        // 4) rearm
         _timer_rearm();
 
-        current_task = (current_task + 1) % 2;
-
-        early_uart_puts("[ISR] Switching to task ");
-        early_uart_putc('0' + current_task + 1);
-        early_uart_puts("\n");
-
-        _os_serial_printf("\n\n eos_ack_irq's irq=0x%x\n", irq);       
+        // 5) EOI
         eos_ack_irq(irq);
 
-        // Context 복구 (이후 dead code 불가)
-        early_uart_puts("\n\n [ISR] Right before restore_context for task ");
-        uart_put_hex(current_task, 1); 
-        early_uart_putc('\n');
-        debug_restore_context(tasks[current_task].sp, current_task);
+        // 6) next 선택
+        int next = (current_task + 1) % 2;
 
-        _os_restore_context(tasks[current_task].sp);
+        // 7) 스위치 직전 디버그(옵션)
+        _os_serial_printf("[ISR] switch %d->%d\n", current_task, next);
+        debug_restore_context(tasks[next].sp, next);
 
+        // 8) restore (noreturn)
+        current_task = next;
+        return tasks[current_task].sp;
     } else {
-         eos_ack_irq(irq);
+        eos_ack_irq(irq);
+        return saved_context_ptr;
     }
-    // 여기는 도달하지 않음 (_os_restore_context가 eret하므로)
+    // 도달 불가
 }
 
 /********************************************************
@@ -198,13 +186,9 @@ void task_func1(void *arg) {
         early_uart_puts("===========================\n");
 
         _os_serial_printf("[Task%d]\n", current_task + 1);
-        // debug_restore_context(tasks[current_task].sp, current_task);      
         
         __asm__ volatile("wfi");
-        // wfi 이후
         early_uart_puts("[DBG] after wfi = ");        
-        dump_timer_registers();
-
     }
 }
 
@@ -217,18 +201,15 @@ void task_func2(void *arg) {
         early_uart_puts("===========================\n");
 
         _os_serial_printf("[Task%d]\n", current_task + 1);
-        // debug_restore_context(tasks[current_task].sp, current_task);
 
         __asm__ volatile("wfi");
-        // wfi 이후
         early_uart_puts("[DBG] after wfi = ");        
-        dump_timer_registers();
     }
 }
 
 
 // 초기화
-extern void _os_restore_context(addr_t sp);
+// extern void _os_restore_context(addr_t sp);
 
 
 void _os_initialization(void) {
@@ -257,14 +238,16 @@ void _os_initialization(void) {
 
     early_uart_puts("[boot] Contexts created\n");
 
-    _os_serial_printf("[DBG] Task 1: ctx0=%x  \nx0(arg)=%lx  \nSP=%lx  \nELR=%lx  \nSPSR=%lx\n",
+    _os_serial_printf(
+        "[DBG] Task 1: ctx0=%x  \nx0(arg)=%lx  \nSP=%lx  \nELR=%lx  \nSPSR=%lx\n",
         (void*)tasks[0].sp,
         ((_os_context_t*)tasks[0].sp)->x[0],
         ((_os_context_t*)tasks[0].sp)->sp,
         ((_os_context_t*)tasks[0].sp)->elr_el1,
         ((_os_context_t*)tasks[0].sp)->spsr_el1);
 
-    _os_serial_printf("[DBG] Task 2: ctx0=%x  \nx0(arg)=%lx  \nSP=%lx  \nELR=%lx  \nSPSR=%lx\n",
+    _os_serial_printf(
+        "[DBG] Task 2: ctx0=%x  \nx0(arg)=%lx  \nSP=%lx  \nELR=%lx  \nSPSR=%lx\n",
         (void*)tasks[1].sp,
         ((_os_context_t*)tasks[1].sp)->x[0],
         ((_os_context_t*)tasks[1].sp)->sp,
@@ -273,7 +256,7 @@ void _os_initialization(void) {
 
     /* Task1 진입 */
     current_task = 0;
-    _os_restore_context(tasks[0].sp);
+    _os_restore_and_eret(tasks[0].sp);
 
     while (1);    
 }

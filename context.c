@@ -65,6 +65,7 @@ addr_t _os_create_context(addr_t stack_base,
     return (addr_t)ctx; // TCB->sp로
 }
 
+/*
 __attribute__((noreturn))
 void _os_restore_context(addr_t sp)
 {
@@ -86,7 +87,7 @@ void _os_restore_context(addr_t sp)
         "ldp    x2,  x3,  [x9, #16]\n\t"
         "ldp    x4,  x5,  [x9, #32]\n\t"
         "ldp    x6,  x7,  [x9, #48]\n\t"
-        /* x8,x9 건너뛰기 */
+        // x8,x9 건너뛰기
         "ldp    x10, x11, [x9, #80]\n\t"
         "ldp    x12, x13, [x9, #96]\n\t"
         "ldp    x14, x15, [x9, #112]\n\t"
@@ -163,3 +164,5 @@ addr_t _os_save_context()
         return ret;
 }
 
+
+*/

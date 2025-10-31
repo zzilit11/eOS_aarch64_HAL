@@ -1,6 +1,12 @@
 #ifndef CONTEXT_H_
 #define CONTEXT_H_
 
+// 어셈블리에서 사용할 오프셋 상수
+#define CTX_SIZE sizeof(_os_context_t) // 272
+#define CTX_OFF_SP   (31*8)            // 248
+#define CTX_OFF_ELR  (31*8 + 8)        // 256
+#define CTX_OFF_SPSR (31*8 + 16)       // 264
+
 #include "type.h"
 
 typedef struct _os_context {
@@ -17,7 +23,7 @@ addr_t _os_create_context(addr_t stack_base,
                             void (*entry)(void *),
                             void *arg);
 
-addr_t _os_save_context(void);
-void _os_restore_context(addr_t sp) __attribute__((noreturn));
+// addr_t _os_save_context(void);
+// void _os_restore_context(addr_t sp) __attribute__((noreturn));
 
 #endif // CONTEXT_H_
