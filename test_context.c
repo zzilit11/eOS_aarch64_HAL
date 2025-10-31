@@ -76,8 +76,43 @@ void dump_context_struct(const int tag, int id, addr_t sp) {
 }
 
 
+static void copy_context(_os_context_t *dst, const _os_context_t *src)
+{
+    if (!dst || !src) {
+        return;
+    }
+
+    int64u_t *dst_words = (int64u_t *)dst;
+    const int64u_t *src_words = (const int64u_t *)src;
+    const size_t word_count = sizeof(_os_context_t) / sizeof(int64u_t);
+    const int64u_t dst_addr = (int64u_t)dst;
+    const int64u_t src_addr = (int64u_t)src;
+
+    if (dst_addr == src_addr) {
+        return;
+    }
+
+    if (dst_addr > src_addr && dst_addr < src_addr + sizeof(_os_context_t)) {
+        for (size_t i = word_count; i-- > 0;) {
+            dst_words[i] = src_words[i];
+        }
+        return;
+    }
+
+    for (size_t i = 0; i < word_count; ++i) {
+        dst_words[i] = src_words[i];
+    }
+}
+
 void save_current_task_sp(addr_t sp) {
-    tasks[current_task].sp = sp;
+    _os_context_t *dest = (_os_context_t *)tasks[current_task].sp;
+    const _os_context_t *src = (const _os_context_t *)sp;
+
+    if (!dest) {
+        return;
+    }
+
+    copy_context(dest, src);
 }
 
 void debug_restore_context(addr_t sp, int task_id) {
@@ -87,9 +122,9 @@ void debug_restore_context(addr_t sp, int task_id) {
 void validate_save_addr(addr_t saving_sp, int task_idx) {
     early_uart_puts("[CHECK] save_current_task_sp 인자 (saving_sp) = ");
     uart_put_hex((int64u_t)saving_sp, 8); early_uart_putc('\n');
-    early_uart_puts("[CHECK] 현재 tasks[");
+    early_uart_puts("[CHECK] 저장 대상 tasks[");
     early_uart_putc('0' + task_idx);
-    early_uart_puts("].sp  = ");
+    early_uart_puts("].sp(base) = ");
     uart_put_hex((int64u_t)tasks[task_idx].sp, 8); early_uart_putc('\n');
 }
 
