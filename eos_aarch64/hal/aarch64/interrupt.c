@@ -49,7 +49,8 @@ void hal_disable_irq_line(int32s_t irq)
 /* -------------------- CPU Interrupt control -------------------- */
 void hal_enable_interrupt(void)
 {
-    __asm__ volatile ("msr daifclr, #2");
+    __asm__ volatile ("msr daifclr, #2" ::: "memory");
+    __asm__ volatile ("isb" ::: "memory");
 }
 
 int64u_t hal_disable_interrupt(void)

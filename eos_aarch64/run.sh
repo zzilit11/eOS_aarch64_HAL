@@ -7,6 +7,6 @@ qemu-system-aarch64 \
   -m 128M \
   -serial stdio \
   -monitor tcp:127.0.0.1:5555,server,nowait \
-  -kernel build/kernel.elf \
+  -kernel eos \
   -nographic \
   -no-reboot

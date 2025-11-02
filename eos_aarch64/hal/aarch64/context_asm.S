@@ -1,3 +1,5 @@
+.text
+
 .equ CTX_SIZE, 272
 .equ CTX_OFF_SP, 248
 .equ CTX_OFF_ELR, 256

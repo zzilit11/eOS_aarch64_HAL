@@ -26,7 +26,7 @@ void _os_init_hal();		// Initialize HAL
 void _os_init_icb_table();	// Initialize ICB table structure
 void _os_init_scheduler();	// Initialize bitmap scheduler module
 void _os_init_task();		// Initialize task management module
-void _os_init_timer();		// Initialize timer management module
+// void _os_init_timer();		// Initialize timer management module
 
 
 /********************************************************

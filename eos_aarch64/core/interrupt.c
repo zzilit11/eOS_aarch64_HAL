@@ -84,6 +84,8 @@ void save_current_task_sp(addr_t sp)
 
 // aarch64
 void _os_common_interrupt_handler(int32u_t irq_num, addr_t saved_context_ptr) {
+    PRINT("In _os_common_interrupt_handler, irq_num: %u, saved_context_ptr: %p\n", irq_num, (void*)saved_context_ptr);
+    
     /* Acknowledges the irq */
     hal_ack_irq(irq_num);
 

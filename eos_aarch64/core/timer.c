@@ -96,6 +96,7 @@ void eos_trigger_counter(eos_counter_t *counter)
 /* Timer interrupt handler */
 static void timer_interrupt_handler(int8s_t irqnum, void *arg)
 {
+    PRINT("Timer interrupt occurred\n");
     /* Triggers alarms */
     _timer_rearm(); // Reload the timer
     eos_trigger_counter(&system_timer);

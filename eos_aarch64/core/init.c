@@ -25,7 +25,7 @@ void _os_init() //초기화 함수로, hal의 entry.S에서 호출됨
     _os_scheduler_lock = LOCKED; //eos_internal.h에 int8u_t로 선언되어 있음 + scheduler.c에 정의되어 있음 // 확인 완료(25/09/07-이종원)
 
     // Initializes subsystems
-    _os_init_hal(); // hal/init_hal.c에 구현되어 있음 // timer interrupt 만 활성화함
+    _os_init_hal(); // timer interrupt 만 활성화함
     _os_init_icb_table(); //core/interrupt.c에 구현되어 있음 - Team A 관할 // 확인 완료(25/09/07-이종원)
     _os_init_scheduler(); // core/scheduler.c에 구현되어 있음 - Team A 관할 //확인 완료 (25/09/07-이종원)
     _os_init_task(); // core/task.c에 구현되어 있음 - Team A 관할 //확인 완료 (25/09/07-이종원)
@@ -40,8 +40,8 @@ void _os_init() //초기화 함수로, hal의 entry.S에서 호출됨
 
     // Starts multitasking by enabling preemption and interrupts
     PRINT("Starts multitasking\n");
-    _os_scheduler_lock = UNLOCKED; // 검증
-    hal_enable_interrupt(); // 검증
+    _os_scheduler_lock = UNLOCKED; 
+    hal_enable_interrupt(); 
 
     // Permanently gives control to the tasks in the ready queue
     // The idle task runs when the ready queue is effectively empty

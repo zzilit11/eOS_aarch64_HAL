@@ -50,7 +50,7 @@ void _timer_rearm(void)
 }
 
 /* Initialize Generic Timer (CNTP) and enable its interrupt */
-void _os_init_timer(void)
+void _os_init_hal(void)
 {
     int64u_t freq = read_cntfrq_el0();  // usually 62500000 on QEMU virt
 

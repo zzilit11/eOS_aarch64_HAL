@@ -76,7 +76,7 @@ bss_clear_done:
     
 os_init: 
     // Call OS initialization routine
-    bl      _os_initialization
+    bl      _os_init
 
 idle_loop:  
     wfe

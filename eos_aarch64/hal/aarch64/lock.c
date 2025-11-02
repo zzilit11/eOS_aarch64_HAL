@@ -2,21 +2,22 @@
 
 void _os_spin_lock(_os_spinlock_t *lock)
 {
-    unsigned int tmp, val;
+    unsigned int loaded, status, one = SPINLOCK_LOCKED;
 
     do {
         do {
             __asm__ __volatile__(
-                "ldaxr  %w0, [%1]\n"   // lock 값 읽기 + acquire barrier
-                "cbnz   %w0, 1f\n"     // 0이 아니면 다른 코어가 점유 중
-                "stxr   %w0, %w2, [%1]\n" // 0이면 시도
+                "ldaxr  %w[loaded], [%[addr]]\n"   // loaded = *lock
+                "cbnz   %w[loaded], 1f\n"          // 이미 잠김이면 건너뛰기
+                "stxr   %w[status], %w[one], [%[addr]]\n" // 시도, status=0이면 성공
                 "1:"
-                : "=&r"(val), "+r"(lock), "=&r"(tmp)
-                : "2"(SPINLOCK_LOCKED)
+                : [loaded]"=&r"(loaded), [status]"=&r"(status)
+                : [addr]"r"(lock), [one]"r"(one)
                 : "memory");
-        } while (val != 0 || tmp != 0); // 실패 시 반복
+        } while (loaded != 0 || status != 0);
     } while (0);
 }
+
 
 void _os_spin_unlock(_os_spinlock_t *lock)
 {

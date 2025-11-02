@@ -19,7 +19,7 @@ void write_cntp_tval_el0(int32u_t val);
 void write_cntp_ctl_el0(int32u_t val);
 
 /* Initialize the Generic Timer */
-void _os_init_timer(void);
+void _os_init_hal(void);
 
 /* Rearm the timer for the next tick */
 void _timer_rearm(void);
