@@ -129,7 +129,7 @@ void eos_schedule()
     /* Restores the context of the next task */
     next_task->status = RUNNING;
     _os_current_task = next_task;
-    _os_restore_context(next_task->sp);
+    _os_restore_and_eret(next_task->sp);
 
     /* Never reaches here */
 }
