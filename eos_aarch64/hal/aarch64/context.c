@@ -42,10 +42,7 @@ void print_context(addr_t ctx_addr)
     
 }
 
-addr_t _os_create_context(addr_t stack_base,
-                            size_t stack_size,
-                            void (*entry)(void *),
-                            void *arg)
+addr_t _os_create_context(addr_t stack_base, size_t stack_size, void (*entry)(void *), void *arg)
 {
     // 1) 16B 정렬된 런타임 SP 계산
     int64u_t sp = ((int64u_t)stack_base + (int64u_t)stack_size) & ~0xFUL;

@@ -8,12 +8,14 @@
 
 
 // Register read
-static inline int32u_t mmio_read32(addr_t a) {
+static inline int32u_t mmio_read32(addr_t a) 
+{
     return *(volatile int32u_t *)a;
 }
 
 // Register write
-static inline void mmio_write32(addr_t a, int32u_t v) {
+static inline void mmio_write32(addr_t a, int32u_t v) 
+{
     *(volatile int32u_t *)a = v;
 }
 

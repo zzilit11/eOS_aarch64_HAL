@@ -1,7 +1,6 @@
 #ifndef CONTEXT_H_
 #define CONTEXT_H_
 
-// 어셈블리에서 사용할 오프셋 상수
 #define CTX_SIZE sizeof(_os_context_t) // 272
 #define CTX_OFF_SP   (31*8)            // 248
 #define CTX_OFF_ELR  (31*8 + 8)        // 256

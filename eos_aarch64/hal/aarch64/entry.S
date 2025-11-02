@@ -83,7 +83,7 @@ idle_loop:
     b       idle_loop
 
 /* ===========================
- * 예외 벡터 테이블 (2KiB align)
+ * EL1 Exception Vector Table (2KiB align)
  * ===========================*/
 .section .vectors, "ax"
 .align  11
@@ -91,55 +91,66 @@ idle_loop:
 .global __vectors_start
 __vectors_start:
 vectors_el1:
-    /* SP0/EL1 slots (30%는 stub) */
-    b   el1_sync_sp0                // +0x000
+
+    /* ===== Group A: EL1 using SP0 (SPSel=0) =====
+     * Context: EL1 code running on SP_EL0 (special stack).
+     * Typical use: low-level trampolines, special paths.
+     */
+    b   el1_sync_sp0                // +0x000  Synchronous exception at EL1 with SP0
     .org vectors_el1 + 0x080
-    b   el1_irq_sp0                 // +0x080
+    b   el1_irq_sp0                 // +0x080  IRQ at EL1 with SP0
     .org vectors_el1 + 0x100
-    b   el1_fiq_sp0
+    b   el1_fiq_sp0                 // +0x100  FIQ at EL1 with SP0
     .org vectors_el1 + 0x180
-    b   el1_serr_sp0
+    b   el1_serr_sp0                // +0x180  SError at EL1 with SP0
+
+
+    /* ===== Group B: EL1 using SPx (SPSel=1) =====
+     * Context: EL1 code running on SP_EL1 (normal kernel path).
+     * Typical use: most kernel exceptions and interrupts.
+     */
     .org vectors_el1 + 0x200
-    b   el1_sync_spx                // +0x200
+    b   el1_sync_spx                // +0x200  Synchronous exception at EL1 with SPx
     .org vectors_el1 + 0x280
-    b   el1_irq_spx_handler
-
+    b   el1_irq_spx_handler         // +0x280  IRQ at EL1 with SPx (implemented)
     .org vectors_el1 + 0x300
-    b   el1_fiq_spx
+    b   el1_fiq_spx                 // +0x300  FIQ at EL1 with SPx
     .org vectors_el1 + 0x380
-    b   el1_serr_spx
+    b   el1_serr_spx                // +0x380  SError at EL1 with SPx
 
+
+    /* ===== Group C: Exceptions taken from EL0 =====
+     * Context: EL0 -> EL1 exception entry.
+     * Typical use: syscall, page fault, user IRQ.
+     */
     .org vectors_el1 + 0x400
-    b   el1_sync_el0
+    b   el1_sync_el0                // +0x400  Synchronous exception from EL0
     .org vectors_el1 + 0x480
-    b   el1_irq_el0
+    b   el1_irq_el0                 // +0x480  IRQ from EL0
     .org vectors_el1 + 0x500
-    b   el1_fiq_el0
+    b   el1_fiq_el0                 // +0x500  FIQ from EL0
     .org vectors_el1 + 0x580
-    b   el1_serr_el0
+    b   el1_serr_el0                // +0x580  SError from EL0
 
+
+    /* ===== Group D: AArch32 compatibility at EL1 =====
+     * Context: EL1 executing in AArch32 state.
+     * Typical use: 32-bit guests or compat layers.
+     */
     .org vectors_el1 + 0x600
-    b   el1_sync_a32
+    b   el1_sync_a32                // +0x600  AArch32 synchronous exception at EL1
     .org vectors_el1 + 0x680
-    b   el1_irq_a32
+    b   el1_irq_a32                 // +0x680  AArch32 IRQ at EL1
     .org vectors_el1 + 0x700
-    b   el1_fiq_a32
+    b   el1_fiq_a32                 // +0x700  AArch32 FIQ at EL1
     .org vectors_el1 + 0x780
-    b   el1_serr_a32
+    b   el1_serr_a32                // +0x780  AArch32 SError at EL1
+
 
 /* =============================================
- * 실제 예외 핸들러 구현 (벡터 테이블 바깥)
+ * EL1 IRQ Handler with Full Context Save/Restore
  * ============================================= */
-
-.equ CTX_SIZE, 272
-.equ CTX_OFF_SP, 248
-.equ CTX_OFF_ELR, 256
-.equ CTX_OFF_SPSR, 264
-
 .global el1_irq_spx_handler
-.global _os_context_save
-.global _os_restore_and_eret
-
 el1_irq_spx_handler:
     // Save full EL1 context to a frame and get its pointer in x0
     bl      _os_context_save         // x0 = context_ptr
@@ -152,80 +163,6 @@ el1_irq_spx_handler:
 
     // Tail-call into restore-and-exit
     b       _os_restore_and_eret
-
-
-// Save caller context into a stack frame and return its base in x0
-_os_context_save:
-    // Allocate frame
-    sub     sp, sp, #CTX_SIZE
-
-    // Save GPRs x0-x30
-    stp     x0,  x1,  [sp, #(0*16)]
-    stp     x2,  x3,  [sp, #(1*16)]
-    stp     x4,  x5,  [sp, #(2*16)]
-    stp     x6,  x7,  [sp, #(3*16)]
-    stp     x8,  x9,  [sp, #(4*16)]
-    stp     x10, x11, [sp, #(5*16)]
-    stp     x12, x13, [sp, #(6*16)]
-    stp     x14, x15, [sp, #(7*16)]
-    stp     x16, x17, [sp, #(8*16)]
-    stp     x18, x19, [sp, #(9*16)]
-    stp     x20, x21, [sp, #(10*16)]
-    stp     x22, x23, [sp, #(11*16)]
-    stp     x24, x25, [sp, #(12*16)]
-    stp     x26, x27, [sp, #(13*16)]
-    stp     x28, x29, [sp, #(14*16)]
-    str     x30,      [sp, #(15*16)]     // LR
-
-    // Save original SP, ELR_EL1, SPSR_EL1
-    add     x0, sp, #CTX_SIZE            // x0 = original SP before sub
-    str     x0,      [sp, #CTX_OFF_SP]
-    mrs     x0, ELR_EL1
-    str     x0,      [sp, #CTX_OFF_ELR]
-    mrs     x0, SPSR_EL1
-    str     x0,      [sp, #CTX_OFF_SPSR]
-
-    // Return context base in x0
-    mov     x0, sp
-    ret
-
-// Restore from context pointer in x0 and eret
-_os_restore_and_eret:
-    mov     x9, x0                       // x9 = context_ptr
-
-    // Restore system registers first
-    ldr     x10, [x9, #CTX_OFF_ELR]
-    ldr     x11, [x9, #CTX_OFF_SPSR]
-    msr     ELR_EL1, x10
-    msr     SPSR_EL1, x11
-
-    // Restore GPRs (keep x9 as base until last)
-    ldp     x0,  x1,  [x9, #(0*16)]
-    ldp     x2,  x3,  [x9, #(1*16)]
-    ldp     x4,  x5,  [x9, #(2*16)]
-    ldp     x6,  x7,  [x9, #(3*16)]
-    // x8, x9 later since x9 is the base
-    ldp     x10, x11, [x9, #(5*16)]
-    ldp     x12, x13, [x9, #(6*16)]
-    ldp     x14, x15, [x9, #(7*16)]
-    ldp     x16, x17, [x9, #(8*16)]
-    ldp     x18, x19, [x9, #(9*16)]
-    ldp     x20, x21, [x9, #(10*16)]
-    ldp     x22, x23, [x9, #(11*16)]
-    ldp     x24, x25, [x9, #(12*16)]
-    ldp     x26, x27, [x9, #(13*16)]
-    ldp     x28, x29, [x9, #(14*16)]
-    ldr     x30,      [x9, #(15*16)]
-
-    // Restore SP, x8, x9 last
-    ldr     x8,  [x9, #(4*16)]
-    ldr     x10, [x9, #CTX_OFF_SP]       // x10 = SP to restore
-    ldr     x9,  [x9, #(4*16 + 8)]
-    mov     sp, x10
-
-    // Exit from exception
-    isb
-    eret
 
 /* EL1 vector stubs: park CPU until implemented */
 el1_sync_sp0:  

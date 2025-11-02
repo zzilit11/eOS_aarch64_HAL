@@ -65,11 +65,6 @@ int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_siz
     /* Creates a context and store the context in the tcb */
     task->sp = _os_create_context(sblock_start, sblock_size, entry, arg);
 
-    // // idle_task 생성 시점에 _os_ready_queue의 상태를 확인하기 위한 디버그 코드
-    // if (priority == LOWEST_PRIORITY) {
-    //     PRINT("--> Creating idle_task. Queue state = %p\n", (void*)_os_ready_queue[priority]);
-    // }
-
     /* Inserts this tcb into the ready queue */
     int32u_t flag = _os_lock_sync(&_os_ready_queue_lock);
     _os_add_node_tail(&_os_ready_queue[task->priority], &(task->queue_node));
@@ -91,7 +86,6 @@ int32u_t eos_destroy_task(eos_tcb_t *task)
 
 void eos_schedule()
 {
-    //PRINT("Scheduling...print for debugging\n"); //진입 확인용 // (25/09/07-이종원)
     /* Checks if the scheduler is locked */
     int32u_t flag = hal_disable_interrupt();
     if (_os_scheduler_lock == LOCKED) {
@@ -110,14 +104,14 @@ void eos_schedule()
             _os_current_task->status = READY;
         }
 
-        /* Saves the current context */
-        addr_t sp = _os_save_context();
-        if (!sp) {
-            return;  // Return to the preemption point after restoring context
-        }
-
-        /* Saves the stack pointer in the tcb */
-        _os_current_task->sp = sp;
+    //    /* Saves the current context */
+    //    addr_t sp = _os_save_context();
+    //    if (!sp) {
+    //        return;  // Return to the preemption point after restoring context
+    //    }
+//
+    //    /* Saves the stack pointer in the tcb */
+    //    _os_current_task->sp = sp;
     } else {
         /* Reaches here when eOS call eos_schedule(): Only runs the next task */
     }
@@ -261,34 +255,14 @@ void eos_sleep(int32u_t tick)
 void _os_init_task() // 확인 완료 (25/09/07-이종원)
 {
     PRINT("Initializing task module\n");
-    // GEMINI: 해당부분은 없어도 문제 없다.
-    // 이유: C 언어 표준에 명시된 동작인 C 스타트업 코드가 BSS 영역 전체를 0으로 초기화하는 작업을 수행하기 때문인데, 
-    //_os_current_task과 _os_ready_queue[i]은 전역 변수라 BSS 영역에 위치하게 되고, 따라서 자동으로 0으로 초기화된다.
-    // 하지만 유지시키기로 결정 (25/09/07-이종원)
-    // 이유: 
-    // 1. 코드의 명확성과 가독성을 위해 초기화 코드를 유지하는 것이 좋으므로 유지시킨다.
-    // 2. C 스타트업 코드가 항상 존재하지 않음을 고려하여 유지시키자.
 
     /* Initializes current_task */
     _os_current_task = NULL; 
-    // 현재 동작하고 있는 task가 없으므로 NULL로 초기화
-    // _os_current_task는 eos_tcb_t 구조체의 주소를 저장하는 포인터 변수: 현재 동작하는 Task의 TCB를 가리킴
-    // 확인 완료 (25/09/07-이종원)
-
-    // 이 PRINT문은 _os_init() 함수가 호출될 때마다 실행됩니다.
-    //PRINT("-> Before loop, _os_ready_queue[LOWEST_PRIORITY] = %p\n", (void*)_os_ready_queue[LOWEST_PRIORITY]);
 
     /* Initializes multi-level ready_queue */
     for (int32u_t i = 0; i <= LOWEST_PRIORITY; i++) { //기존, i < LOWEST_PRIORITY로 되어있던 코드 수정 (25/09/07-이종원)
         _os_ready_queue[i] = NULL;
     }
-
-    // 소프트 리셋 시, 이 PRINT문의 결과는 위와 동일하게 나올 것입니다. (버그)
-    //PRINT("-> After loop,  _os_ready_queue[LOWEST_PRIORITY] = %p\n", (void*)_os_ready_queue[LOWEST_PRIORITY]);
-
-    // 기존에 i < LOWEST_PRIORITY로 되어있던 코드를 i <= LOWEST_PRIORITY로 수정
-    // 이유: LOWEST_PRIORITY도 유효한 우선순위이며, 해당 우선순위에 대한 초기화가 누락되어 있었음
-    // 수정 완료 (25/09/07-이종원)
 }
 
 

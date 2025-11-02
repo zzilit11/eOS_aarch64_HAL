@@ -33,34 +33,73 @@ void _os_init_icb_table() // 확인 완료(25/09/07-이종원)
         p->irqnum = i;
         p->handler = NULL;
         p->arg = NULL; 
-        // 핸들러에 전달될 arg인자도 NULL로 초기화
-        // 없어도 전혀 문제 없으나, 코드 가독성 관점을 위해 추가
-        // 없어도 문제 없는 이유: _os_common_interrupt_handler에서 핸들러가 NULL인지 체크 후 호출하기 때문
-        // 추가 (25/09/07-이종원) 
     }
 }
 
 
-void _os_common_interrupt_handler(int32u_t flag)
+static void copy_context(_os_context_t *dst, const _os_context_t *src)
 {
+    if (!dst || !src) {
+        return;
+    }
+
+    int64u_t *dst_words = (int64u_t *)dst;
+    const int64u_t *src_words = (const int64u_t *)src;
+    const size_t word_count = sizeof(_os_context_t) / sizeof(int64u_t);
+    const int64u_t dst_addr = (int64u_t)dst;
+    const int64u_t src_addr = (int64u_t)src;
+
+    if (dst_addr == src_addr) {
+        return;
+    }
+
+    if (dst_addr > src_addr && dst_addr < src_addr + sizeof(_os_context_t)) {
+        for (size_t i = word_count; i-- > 0;) {
+            dst_words[i] = src_words[i];
+        }
+        return;
+    }
+
+    for (size_t i = 0; i < word_count; ++i) {
+        dst_words[i] = src_words[i];
+    }
+}
+
+void save_current_task_sp(addr_t sp)
+{
+    eos_tcb_t *tcb = eos_get_current_task();
+    if (!tcb) {
+        return;
+    }
+
+    _os_context_t *dest = (_os_context_t *)tcb->sp;
+    const _os_context_t *src = (const _os_context_t *)sp;
+
+    if (!dest) {
+        return;
+    }
+
+    copy_context(dest, src);
+}
+
+// aarch64
+void _os_common_interrupt_handler(int32u_t irq, addr_t saved_context_ptr) {
     /* Gets irq number */
     int32u_t irq_num = hal_get_irq();
-    if (irq_num == -1)
-        return;
-	
+    
     /* Acknowledges the irq */
     hal_ack_irq(irq_num);
-	
+
     /* Restores _eflags */
     hal_restore_interrupt(flag); 
 
     /* Dispatches the handler and call it */
     _os_icb_t *p = &_os_icb_table[irq_num];
     if (p->handler != NULL) {
-        //PRINT("entering irq handler %p\n", (void*)(p->handler));
-        p->handler(irq_num, p->arg);
-        //PRINT("exiting irq handler %p\n", (void*)(p->handler));
+        save_current_task_sp(saved_context_ptr);
+        p->handler(irq_num, p->arg); // timer_interrupt_handler 호출
     }
+    return tasks[current_task].sp;
 }
 
 

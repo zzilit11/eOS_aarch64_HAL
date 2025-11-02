@@ -35,10 +35,6 @@ void _os_init() //초기화 함수로, hal의 entry.S에서 호출됨
     PRINT("Creating an idle task\n");
     eos_create_task(&idle_task, idle_stack, sizeof(idle_stack), _os_idle_task, NULL, LOWEST_PRIORITY); // core/task.c에 구현
 
-    // After finishing initialization, calls eos_user_main()
-    // user코드에 정의되어 있고, init.c에 선언 및 호출
-    // header file에 선언하지 않고, 여기서 선언: user가 직접 호출하는 함수가 아니기 때문
-    // user는 해당 이름을 가진 함수에 자신의 코드를 작성하는 형태로 사용
     void eos_user_main();
     eos_user_main();
 

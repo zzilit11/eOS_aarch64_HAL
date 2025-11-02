@@ -12,8 +12,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <hal/current/type.h>
-#include <hal/current/emulator.h>
+#include <hal/aarch64/type.h>
 
 
 /********************************************************
@@ -147,11 +146,11 @@ addr_t _os_create_context(addr_t stack_base, size_t stack_size, void (*entry)(vo
  *     Second, it returns via the saved task
  *         it returns 0 (NULL)
  */
-addr_t _os_save_context();
+// addr_t _os_save_context();
 
 /**
  * Restores CPU registers of a given context
  */
-void _os_restore_context(addr_t sp);
+// void _os_restore_context(addr_t sp);
 
 #endif /* EOS_INTERNAL_H */

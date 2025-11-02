@@ -5,7 +5,7 @@
     - Entry point 지정
 */
 
-/* ARM Cortex-A76 */
+/* ARM Cortex-A72 */
 
 /* Entry point 지정 */
 ENTRY(_start)

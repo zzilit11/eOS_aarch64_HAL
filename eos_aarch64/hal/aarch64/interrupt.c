@@ -34,13 +34,13 @@ void _gic_init(void)
 }
 
 /* -------------------- IRQ line control -------------------- */
-void eos_enable_irq_line(int32s_t irq)
+void hal_enable_irq_line(int32s_t irq)
 {
     addr_t reg = (GICD_ISENABLER0 + (irq / 32) * 4);
     mmio_write32(reg, 1u << (irq % 32));
 }
 
-void eos_disable_irq_line(int32s_t irq)
+void hal_disable_irq_line(int32s_t irq)
 {
     addr_t reg = (GICD_ICENABLER0 + (irq / 32) * 4);
     mmio_write32(reg, 1u << (irq % 32));
@@ -68,9 +68,7 @@ void hal_restore_interrupt(int64u_t flag)
 }
 
 /* -------------------- IRQ acknowledge & EOI -------------------- */
-/* 주의: entry.S에서 이미 GICC_IAR를 읽었다면,
-   여기서 또 읽지 마라. 이 함수는 안 쓰거나, raw IAR 경로만 써. */
-int32s_t eos_get_irq(void)
+int32u_t hal_get_irq(void)
 {
     irq = mmio_read32((GICC_IAR));
     int id = irq & 0x3FF;
@@ -79,16 +77,17 @@ int32s_t eos_get_irq(void)
     return id;
 }
 
-/* EOImodeNS에 "맞춰" EOI 처리 */
-void eos_ack_irq(int32u_t irq)
+/* EOI handling aligned with EOImodeNS setting */
+void hal_ack_irq(int32u_t irq)
 {
-    // EOIR: raw IAR 그대로
+    // EOIR: write the raw IAR value as-is
     mmio_write32((addr_t)(int64u_t)GICC_EOIR, (int32u_t)irq);
 
-    // DIR: EOImodeNS 상관없이 항상 한 번 더 쳐줌 (특히 QEMU에서 필요)
+    // DIR: always write once more regardless of EOImodeNS (needed especially in QEMU)
     int32u_t intid = (int32u_t)irq & 0x3FFu;
     mmio_write32((addr_t)(int64u_t)GICC_DIR, intid);
 }
+
 
 /* -------------------- Compatibility stub -------------------- */
 void _deliver_irq(void)
