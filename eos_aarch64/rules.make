@@ -48,17 +48,17 @@ CFLAGS := $(filter-out -m32,$(CFLAGS))
 ASFLAGS := $(filter-out -m32,$(ASFLAGS))
 endif
 
-AR ?= ar
+AR ?= $(GCC_PREFIX)ar
 
 $(TARGET): banner $(OBJS)
 ifneq ($(OBJS),)
-    $(AR) r $@ $(filter-out banner, $^)
+	$(AR) r $@ $(filter-out banner, $^)
 endif
 
 banner:
-    @echo ----------------------------------------------------
-    @echo Compiling in $(shell pwd)
-    @echo ----------------------------------------------------
+	@echo ----------------------------------------------------
+	@echo Compiling in $(shell pwd)
+	@echo ----------------------------------------------------
 
 %.o: %.c
 ifeq ($(shell pwd), $(PWD)/user)

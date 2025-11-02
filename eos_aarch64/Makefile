@@ -14,6 +14,10 @@ export HAL := aarch64
 # Kernel Build
 #
 ##################################################################
+export GCC_PREFIX := aarch64-linux-gnu-
+export CC := $(GCC_PREFIX)gcc
+export LD := $(GCC_PREFIX)ld
+
 export TOP_DIR := $(shell pwd)
 export MAKERULE := $(TOP_DIR)/rules.make
 export HPATH := $(TOP_DIR)
