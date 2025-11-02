@@ -12,7 +12,7 @@
 
 static void _os_idle_task(void *arg);	// idle task
 static eos_tcb_t idle_task;		// tcb for the idle task
-static int8u_t idle_stack[8096] __attribute__((aligned(sizeof(uintptr_t))));	// stack for the idle task
+static int8u_t idle_stack[8096];	// stack for the idle task
 
 
 /*

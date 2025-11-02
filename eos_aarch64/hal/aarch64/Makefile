@@ -6,6 +6,6 @@ clean: clean_
 	rm -f $(TOP_DIR)/eos
 
 eos: $(subdir_targets)
-	$(CC) $(CFLAGS) -o $(TOP_DIR)/eos -Wl,--start-group $(subdir_libs) -Wl,--end-group -lrt
+	$(CC) $(CFLAGS) -o $(TOP_DIR)/eos -Wl,--start-group $(subdir_libs) -Wl,--end-group
 	@echo
 	@echo Building EOS is complete. Type ./eos to run EOS.

@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <hal/aarch64/type.h>
+#include <hal/aarch64/context.h>
+#include <hal/aarch64/timer.h>
 
 
 /********************************************************
@@ -73,7 +75,7 @@ void _os_serial_puts(const char *s);
 /* The common interrupt handler:
  * 	Invoked by HAL whenever an interrupt occurrs.
  */
-void _os_common_interrupt_handler(int32u_t);
+void _os_common_interrupt_handler(int32u_t irq, addr_t saved_context_ptr);
 
 
 /********************************************************

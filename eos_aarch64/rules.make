@@ -1,34 +1,4 @@
-TARGET := $(shell pwd)/module.a
-
-# subdirs that contain Makefile
-subdir_makefiles := $(shell find ./ -name Makefile -type f)
-#hal_makefiles := $(filter ./hal%,$(subdir_makefiles))
-#unrel_hal_makefiles := $(filter-out ./hal/$(HAL)%,$(hal_makefiles))
-#subdir_makefiles := $(filter-out $(unrel_hal_makefiles),$(subdir_makefiles))
-subdirs := $(patsubst ./%,%,$(dir $(subdir_makefiles)))
-subdir_libs := $(patsubst %,%module.a,$(subdirs))
-
-# target to make each subdirs
-subdir_targets := $(patsubst %,___%,$(subdirs))
-#debug:
-#	@echo ----------------------------------------------------
-#	@echo $(subdir_targets)
-#	@echo ----------------------------------------------------
-
-$(patsubst %,___%,$(subdirs)):
-#	@echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	@$(MAKE) -C $(patsubst ___%,%,$@) $(PWD)/$(patsubst ___%,%,$(patsubst %/,%,$@))/module.a
-
-# target to clean each subdirs
-subdir_cleans := $(patsubst %,_clean_%,$(subdirs))
-
-$(patsubst %,_clean_%,$(subdirs)):
-	@$(MAKE) -C $(patsubst _clean_%,%,$@) clean_
-
-# cleaning this directory
-clean_: $(subdir_cleans)
-	rm -rf $(TARGET) $(OBJS)
-	rm -rf hal/current	
+TARGET := $(CURDIR)/module.a
 
 C_SRCS := $(wildcard *.c)
 S_SRCS := $(wildcard *.S)
@@ -36,13 +6,21 @@ OBJS := $(patsubst %.c,%.o,$(C_SRCS)) $(patsubst %.S,%.o,$(S_SRCS))
 
 ASFLAGS ?= $(CFLAGS)
 
-# compling and linking this directory
-#
-# When building for the aarch64 HAL we must ensure the objects are emitted for
-# the 64-bit architecture.  The legacy default of passing -m32 through CFLAGS
-# is not valid for the aarch64 cross compiler, so filter it away for the
-# objects built in this tree.
+# Discover sub-makefiles while avoiding unrelated HAL implementations.
+subdir_makefiles := $(shell find . -mindepth 2 -name Makefile -type f)
+hal_makefiles := $(filter ./hal/%,$(subdir_makefiles))
+unrel_hal_makefiles := $(filter-out ./hal/$(HAL)%,$(hal_makefiles))
+subdir_makefiles := $(filter-out $(unrel_hal_makefiles),$(subdir_makefiles))
+subdir_dirs := $(sort $(dir $(subdir_makefiles)))
+subdirs := $(patsubst ./%,%,$(subdir_dirs))
+subdirs := $(patsubst %/,%,$(subdirs))
+subdirs := $(filter %,$(subdirs))
 
+subdir_targets := $(addprefix __build__,$(subdirs))
+subdir_cleans := $(addprefix __clean__,$(subdirs))
+subdir_libs := $(addprefix $(CURDIR)/,$(addsuffix /module.a,$(subdirs)))
+
+# When building for aarch64 ensure incompatible 32-bit flags are stripped.
 ifeq ($(HAL),aarch64)
 CFLAGS := $(filter-out -m32,$(CFLAGS))
 ASFLAGS := $(filter-out -m32,$(ASFLAGS))
@@ -50,18 +28,34 @@ endif
 
 AR ?= $(GCC_PREFIX)ar
 
+.PHONY: all clean clean_ banner $(subdir_targets) $(subdir_cleans)
+
+all: $(subdir_targets) module.a
+
+module.a: $(TARGET)
+
 $(TARGET): banner $(OBJS)
-ifneq ($(OBJS),)
-	$(AR) r $@ $(filter-out banner, $^)
-endif
+	$(AR) rcs $@ $(OBJS)
+
+$(subdir_targets):
+	@$(MAKE) -C $(patsubst __build__%,%,$@) module.a
+
+$(subdir_cleans):
+	@$(MAKE) -C $(patsubst __clean__%,%,$@) clean_
+
+clean: clean_
+
+clean_: $(subdir_cleans)
+	rm -rf $(TARGET) $(OBJS)
+	rm -rf hal/current
 
 banner:
 	@echo ----------------------------------------------------
-	@echo Compiling in $(shell pwd)
+	@echo Compiling in $(CURDIR)
 	@echo ----------------------------------------------------
 
 %.o: %.c
-ifeq ($(shell pwd), $(PWD)/user)
+ifeq ($(CURDIR),$(TOP_DIR)/user)
 	$(CC) $(CFLAGS) -c -Os -Wall -I$(HPATH) -o $@ $<
 else
 	$(CC) $(CFLAGS) -c -Os -Wall -D_KERNEL_ -I$(HPATH) -o $@ $<

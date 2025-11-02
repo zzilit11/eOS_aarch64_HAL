@@ -3,8 +3,8 @@
     AArch64 startup + Inlined IRQ vector slot
 */
 
-.section .text, "ax"
-.global _start
+.globl _start
+.section .text.boot, "ax"
 _start:
     // Mask all exceptions at entry
     msr     DAIFSet, #0xf           

@@ -14,10 +14,7 @@ ENTRY(_start)
 SECTIONS {
     . = 0x40080000; /* Start address of RAM memory */
 
-    .text : {
-        KEEP(*(.text.boot))
-        *(.text*)
-    }
+    .text : { *(.text.boot) *(.text*) }
     
     .rodata : {
         *(.rodata*)

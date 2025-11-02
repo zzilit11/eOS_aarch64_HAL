@@ -83,15 +83,9 @@ void save_current_task_sp(addr_t sp)
 }
 
 // aarch64
-void _os_common_interrupt_handler(int32u_t irq, addr_t saved_context_ptr) {
-    /* Gets irq number */
-    int32u_t irq_num = hal_get_irq();
-    
+void _os_common_interrupt_handler(int32u_t irq_num, addr_t saved_context_ptr) {
     /* Acknowledges the irq */
     hal_ack_irq(irq_num);
-
-    /* Restores _eflags */
-    hal_restore_interrupt(flag); 
 
     /* Dispatches the handler and call it */
     _os_icb_t *p = &_os_icb_table[irq_num];
@@ -99,7 +93,6 @@ void _os_common_interrupt_handler(int32u_t irq, addr_t saved_context_ptr) {
         save_current_task_sp(saved_context_ptr);
         p->handler(irq_num, p->arg); // timer_interrupt_handler 호출
     }
-    return tasks[current_task].sp;
 }
 
 
