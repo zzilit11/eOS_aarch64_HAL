@@ -25,6 +25,7 @@ void _os_init() //초기화 함수로, hal의 entry.S에서 호출됨
     _os_scheduler_lock = LOCKED; //eos_internal.h에 int8u_t로 선언되어 있음 + scheduler.c에 정의되어 있음 // 확인 완료(25/09/07-이종원)
 
     // Initializes subsystems
+    _gic_init();
     _os_init_hal(); // timer interrupt 만 활성화함
     _os_init_icb_table(); //core/interrupt.c에 구현되어 있음 - Team A 관할 // 확인 완료(25/09/07-이종원)
     _os_init_scheduler(); // core/scheduler.c에 구현되어 있음 - Team A 관할 //확인 완료 (25/09/07-이종원)

@@ -88,7 +88,6 @@ int32u_t eos_destroy_task(eos_tcb_t *task)
 void eos_schedule()
 {
     /* Checks if the scheduler is locked */
-    PRINT("Start of eos_schedule, before hal_disable_interrupt\n");
     int32u_t flag = hal_disable_interrupt();
     if (_os_scheduler_lock == LOCKED) {
         /* Preemption is disabled: Do nothing */
@@ -96,7 +95,6 @@ void eos_schedule()
         return;
     }
     hal_restore_interrupt(flag);
-    PRINT("Start of eos_schedule, after hal_restore_interrupt\n");
 
     if (_os_current_task) {
         if (_os_current_task->status == RUNNING) {
@@ -106,7 +104,6 @@ void eos_schedule()
             _os_set_ready(_os_current_task->priority);
             _os_current_task->status = READY;
         }
-    PRINT("Hello1\n");
 
     //    /* Saves the current context */
     //    addr_t sp = _os_save_context();
@@ -119,8 +116,6 @@ void eos_schedule()
     } else {
         /* Reaches here when eOS call eos_schedule(): Only runs the next task */
     }
-
-    PRINT("Hello2\n");
 
     /* Selects the next task to run */
     int32u_t highest_priority = _os_get_highest_priority();
@@ -135,8 +130,7 @@ void eos_schedule()
     /* Restores the context of the next task */
     next_task->status = RUNNING;
     _os_current_task = next_task;
-
-    PRINT("Hello3\n");
+    PRINT("Switching to task %p with priority %u\n", (void*)next_task, next_task->priority);
     _os_restore_and_eret(next_task->sp);
 
     /* Never reaches here */

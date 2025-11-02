@@ -69,7 +69,6 @@ void eos_trigger_counter(eos_counter_t *counter)
 
     // Print the current time in ticks
     if (counter == &system_timer) {
-        PRINT("------------------------\n");
         PRINT("system clock: %d\n", counter->tick);
     }
 
@@ -96,7 +95,6 @@ void eos_trigger_counter(eos_counter_t *counter)
 /* Timer interrupt handler */
 static void timer_interrupt_handler(int8s_t irqnum, void *arg)
 {
-    PRINT("Timer interrupt occurred\n");
     /* Triggers alarms */
     _timer_rearm(); // Reload the timer
     eos_trigger_counter(&system_timer);
