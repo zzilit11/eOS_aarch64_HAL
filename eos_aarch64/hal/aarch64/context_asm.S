@@ -9,7 +9,7 @@
 .global _os_save_context
 _os_save_context:
     // Allocate frame
-    sub     sp, sp, #CTX_SIZE
+    sub     sp, sp, #CTX_SIZE           // 커널 전용 stack 사용 (일반적 설정)
 
     // Save GPRs x0-x30
     stp     x0,  x1,  [sp, #(0*16)]

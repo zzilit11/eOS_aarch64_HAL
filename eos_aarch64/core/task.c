@@ -50,6 +50,7 @@ int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_siz
     // To be filled by students: Projects 2 and 3
 
     PRINT("task: %p, priority: %u\n", (void*)task, priority);
+    PRINT("stack start: %p, size: %u\n", (void*)sblock_start, sblock_size);
 
     /* Initializes priority */
     task->priority = priority;
@@ -104,21 +105,21 @@ void eos_schedule()
             _os_set_ready(_os_current_task->priority);
             _os_current_task->status = READY;
         }
-    PRINT("Saving context of current task %p with priority %u\n", (void*)_os_current_task, _os_current_task->priority);
+        PRINT("Saving context of current task %p with priority %u\n", (void*)_os_current_task, _os_current_task->priority);
 
-    /* Saves the current context */
-    addr_t sp = _os_save_context();
-    if (!sp) {
-        return;  // Return to the preemption point after restoring context
-    }
+        /* Saves the current context */
+        addr_t sp = _os_save_context();
+        if (!sp) {
+            return;  // Return to the preemption point after restoring context
+        }
 
     /* Saves the stack pointer in the tcb */
     _os_current_task->sp = sp;
     } else {
         /* Reaches here when eOS call eos_schedule(): Only runs the next task */
+        PRINT("No current task. Selecting the next task to run.\n");
     }
 
-    PRINT("Scheduling...\n");
     /* Selects the next task to run */
     int32u_t highest_priority = _os_get_highest_priority();
     _os_node_t *node = _os_ready_queue[highest_priority];
@@ -133,6 +134,7 @@ void eos_schedule()
     next_task->status = RUNNING;
     _os_current_task = next_task;
     PRINT("Switching to task %p with priority %u\n", (void*)next_task, next_task->priority);
+    PRINT("Stack pointer: %p\n", (void*)next_task->sp);
     _os_restore_and_eret(next_task->sp);
 
     /* Never reaches here */
@@ -252,6 +254,7 @@ void eos_sleep(int32u_t tick)
     _os_current_task->status = WAITING;
 
     /* Selects a task from the ready list and runs it */
+    PRINT("Task %p is going to sleep for %u ticks\n", (void*)_os_current_task, timeout);
     eos_schedule();
 }
 

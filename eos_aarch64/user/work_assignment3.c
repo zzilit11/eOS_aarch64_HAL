@@ -33,7 +33,7 @@ void task2()
     } // ‘C’ 출력 후 다음 주기까지 기다림
 }
 
-void eos_user_main3()
+void eos_user_main()
 {
     eos_create_task(&tcb0, stack0, STACK_SIZE, task0, NULL, 1);
     eos_set_period(&tcb0, 2);
