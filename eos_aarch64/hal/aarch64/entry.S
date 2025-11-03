@@ -153,7 +153,7 @@ vectors_el1:
 .global el1_irq_spx_handler
 el1_irq_spx_handler:
     // Save full EL1 context to a frame and get its pointer in x0
-    bl      _os_context_save         // x0 = context_ptr
+    bl      _os_save_context         // x0 = context_ptr
 
     // Read IRQ ID then call common C handler
     mov     x1, x0                   // x1 = context_ptr (C arg2)

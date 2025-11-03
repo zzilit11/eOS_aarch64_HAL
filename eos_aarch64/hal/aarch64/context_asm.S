@@ -4,11 +4,10 @@
 .equ CTX_OFF_SP, 248
 .equ CTX_OFF_ELR, 256
 .equ CTX_OFF_SPSR, 264
-.global _os_context_save
-.global _os_restore_and_eret
 
 // Save caller context into a stack frame and return its base in x0
-_os_context_save:
+.global _os_save_context
+_os_save_context:
     // Allocate frame
     sub     sp, sp, #CTX_SIZE
 
@@ -43,6 +42,7 @@ _os_context_save:
     ret
 
 // Restore from context pointer in x0 and eret
+.global _os_restore_and_eret
 _os_restore_and_eret:
     mov     x9, x0                       // x9 = context_ptr
 

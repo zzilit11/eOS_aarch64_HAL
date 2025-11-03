@@ -55,5 +55,7 @@ void _os_init() //초기화 함수로, hal의 entry.S에서 호출됨
 
 static void _os_idle_task(void *arg)
 {
-    while (1) { /*PRINT("Idle task running...\n");*/ } 
+    while (1) {
+        //PRINT("Idle task running...\n"); 
+    } 
 }

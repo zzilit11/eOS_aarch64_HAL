@@ -113,7 +113,6 @@ int8s_t eos_set_interrupt_handler(int8s_t irqnum, eos_interrupt_handler_t handle
 
     return 0;
 }
-// 확인 완료(25/09/14-이종원)
 
 
 eos_interrupt_handler_t eos_get_interrupt_handler(int8s_t irqnum)

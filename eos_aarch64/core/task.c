@@ -104,19 +104,21 @@ void eos_schedule()
             _os_set_ready(_os_current_task->priority);
             _os_current_task->status = READY;
         }
+    PRINT("Saving context of current task %p with priority %u\n", (void*)_os_current_task, _os_current_task->priority);
 
-    //    /* Saves the current context */
-    //    addr_t sp = _os_save_context();
-    //    if (!sp) {
-    //        return;  // Return to the preemption point after restoring context
-    //    }
-//
-    //    /* Saves the stack pointer in the tcb */
-    //    _os_current_task->sp = sp;
+    /* Saves the current context */
+    addr_t sp = _os_save_context();
+    if (!sp) {
+        return;  // Return to the preemption point after restoring context
+    }
+
+    /* Saves the stack pointer in the tcb */
+    _os_current_task->sp = sp;
     } else {
         /* Reaches here when eOS call eos_schedule(): Only runs the next task */
     }
 
+    PRINT("Scheduling...\n");
     /* Selects the next task to run */
     int32u_t highest_priority = _os_get_highest_priority();
     _os_node_t *node = _os_ready_queue[highest_priority];
