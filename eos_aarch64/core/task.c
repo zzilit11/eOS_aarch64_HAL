@@ -50,7 +50,6 @@ int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_siz
     // To be filled by students: Projects 2 and 3
 
     PRINT("task: %p, priority: %u\n", (void*)task, priority);
-    PRINT("stack start: %p, size: %u\n", (void*)sblock_start, sblock_size);
 
     /* Initializes priority */
     task->priority = priority;
@@ -105,7 +104,6 @@ void eos_schedule()
             _os_set_ready(_os_current_task->priority);
             _os_current_task->status = READY;
         }
-        PRINT("Saving context of current task %p with priority %u\n", (void*)_os_current_task, _os_current_task->priority);
 
         /* Saves the current context */
         addr_t sp = _os_save_context();
@@ -134,7 +132,6 @@ void eos_schedule()
     next_task->status = RUNNING;
     _os_current_task = next_task;
     PRINT("Switching to task %p with priority %u\n", (void*)next_task, next_task->priority);
-    PRINT("Stack pointer: %p\n", (void*)next_task->sp);
     _os_restore_and_eret(next_task->sp);
 
     /* Never reaches here */

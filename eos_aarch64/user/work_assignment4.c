@@ -53,7 +53,7 @@ static void receiver_task2(void *arg)
     }
 }
 
-void eos_user_main4()
+void eos_user_main()
 {
     eos_create_task(&tcb1, (addr_t)stack1, 8096, sender_task, NULL, 50);
     eos_create_task(&tcb2, (addr_t)stack2, 8096, receiver_task1, NULL, 20);
