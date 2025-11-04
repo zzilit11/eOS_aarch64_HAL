@@ -33,7 +33,7 @@ _os_save_context:
 
     // Save original SP and exception context
     add     x1, sp, #CTX_SIZE            // x1 = original SP before sub
-    str     x1,      [sp, #CTX_OFF_SP]
+    str     x1,      [sp, #CTX_OFF_SP]  
     mrs     x1, ELR_EL1
     str     x1,      [sp, #CTX_OFF_ELR]
     mrs     x1, SPSR_EL1
@@ -79,7 +79,7 @@ _os_restore_and_eret:
     ldr     x0, [x0, #0]
 
     // Switch to task stack and return from exception level 1
-    mov     sp, x3
+    mov     sp, x3  // sp is SP_EL1
     isb
-    eret
+    eret // ret - excetion level 안바꾸는 명령어
 .size _os_restore_and_eret, . - _os_restore_and_eret
