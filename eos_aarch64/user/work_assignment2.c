@@ -23,24 +23,25 @@ void print_numbers(void *arg)
     }
 }
 
-
 /*
  * Function for task1: Print alphabet from 'a' to 'z' repeatedly
  */
-void print_alphabet(void *arg)
+static void print_alphabet(void *arg)
 {
+    // Function for task1: Print alphabet from ‘a’ to ‘z’ repeatedly
     int i = 97;
-    while (1) {
-        eos_printf("%d\n", i);
+    while (1)
+    {
+        eos_printf("%c\n", i);
         eos_schedule();
-        if (i++ == 122) {
+        if (i++ == 122)
+        {
             i = 97;
         }
     }
 }
 
-
-void eos_user_main2()
+void eos_user_main()
 {
     /*
      * This is the test code for Project 2

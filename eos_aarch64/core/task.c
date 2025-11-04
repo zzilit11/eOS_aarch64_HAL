@@ -115,7 +115,6 @@ void eos_schedule()
     _os_current_task->sp = sp;
     } else {
         /* Reaches here when eOS call eos_schedule(): Only runs the next task */
-        PRINT("No current task. Selecting the next task to run.\n");
     }
 
     /* Selects the next task to run */
