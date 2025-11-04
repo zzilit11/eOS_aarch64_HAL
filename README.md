@@ -1,8 +1,5 @@
-현재 context save/restore 하는 부분에서 문제가 발생
-
-context가 save 되는 지점은 2 곳 - IRQ와 eos_schedule
-
-IRQ에서 save하는 이유는 aarch64는 ia32와 달리 HW가 context를 자동으로 save하지 않음. - SW가 save해야 함.
+현재 모든 test case (work2, 3, 4)에 대해서 tick이 22~24까지만 돌고 멈추는 현상이 발생함.
+원인은 stack managagement에 있는 것으로 추정
 
 make
 
