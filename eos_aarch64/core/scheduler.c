@@ -63,6 +63,7 @@ void _os_restore_scheduler(int8u_t scheduler_state)
     int32u_t flag = hal_disable_interrupt();
     _os_scheduler_lock = scheduler_state;
     hal_restore_interrupt(flag);
+    PRINT("HELLO5\n");
     eos_schedule();
 }
 

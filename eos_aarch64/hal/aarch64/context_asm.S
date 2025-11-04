@@ -6,14 +6,6 @@
 .equ CTX_OFF_ELR, 256
 .equ CTX_OFF_SPSR, 264
 
-.macro SAVE_PAIR reg1, reg2, slot
-    stp     \reg1, \reg2, [sp, #((\slot) * 16)]
-.endm
-
-.macro LOAD_PAIR reg1, reg2, slot
-    ldp     \reg1, \reg2, [x0, #((\slot) * 16)]
-.endm
-
 // Save caller context into a stack frame and return its base in x0
 .global _os_save_context
 .type _os_save_context, %function
@@ -22,21 +14,21 @@ _os_save_context:
     sub     sp, sp, #CTX_SIZE           // 커널 전용 stack 사용 (일반적 설정)
 
     // Save GPRs x0-x30 in ABI order
-    SAVE_PAIR x0,  x1,  0
-    SAVE_PAIR x2,  x3,  1
-    SAVE_PAIR x4,  x5,  2
-    SAVE_PAIR x6,  x7,  3
-    SAVE_PAIR x8,  x9,  4
-    SAVE_PAIR x10, x11, 5
-    SAVE_PAIR x12, x13, 6
-    SAVE_PAIR x14, x15, 7
-    SAVE_PAIR x16, x17, 8
-    SAVE_PAIR x18, x19, 9
-    SAVE_PAIR x20, x21, 10
-    SAVE_PAIR x22, x23, 11
-    SAVE_PAIR x24, x25, 12
-    SAVE_PAIR x26, x27, 13
-    SAVE_PAIR x28, x29, 14
+    stp     x0,  x1,  [sp, #(0 * 16)]
+    stp     x2,  x3,  [sp, #(1 * 16)]
+    stp     x4,  x5,  [sp, #(2 * 16)]
+    stp     x6,  x7,  [sp, #(3 * 16)]
+    stp     x8,  x9,  [sp, #(4 * 16)]
+    stp     x10, x11, [sp, #(5 * 16)]
+    stp     x12, x13, [sp, #(6 * 16)]
+    stp     x14, x15, [sp, #(7 * 16)]
+    stp     x16, x17, [sp, #(8 * 16)]
+    stp     x18, x19, [sp, #(9 * 16)]
+    stp     x20, x21, [sp, #(10 * 16)]
+    stp     x22, x23, [sp, #(11 * 16)]
+    stp     x24, x25, [sp, #(12 * 16)]
+    stp     x26, x27, [sp, #(13 * 16)]
+    stp     x28, x29, [sp, #(14 * 16)]
     str     x30,      [sp, #(15 * 16)]    // LR
 
     // Save original SP and exception context
@@ -63,20 +55,20 @@ _os_restore_and_eret:
     msr     SPSR_EL1, x2
 
     // Restore general-purpose registers except x0/x1 (used as base)
-    LOAD_PAIR x2,  x3,  1
-    LOAD_PAIR x4,  x5,  2
-    LOAD_PAIR x6,  x7,  3
-    LOAD_PAIR x8,  x9,  4
-    LOAD_PAIR x10, x11, 5
-    LOAD_PAIR x12, x13, 6
-    LOAD_PAIR x14, x15, 7
-    LOAD_PAIR x16, x17, 8
-    LOAD_PAIR x18, x19, 9
-    LOAD_PAIR x20, x21, 10
-    LOAD_PAIR x22, x23, 11
-    LOAD_PAIR x24, x25, 12
-    LOAD_PAIR x26, x27, 13
-    LOAD_PAIR x28, x29, 14
+    ldp     x2,  x3,  [x0, #(1 * 16)]
+    ldp     x4,  x5,  [x0, #(2 * 16)]
+    ldp     x6,  x7,  [x0, #(3 * 16)]
+    ldp     x8,  x9,  [x0, #(4 * 16)]
+    ldp     x10, x11, [x0, #(5 * 16)]
+    ldp     x12, x13, [x0, #(6 * 16)]
+    ldp     x14, x15, [x0, #(7 * 16)]
+    ldp     x16, x17, [x0, #(8 * 16)]
+    ldp     x18, x19, [x0, #(9 * 16)]
+    ldp     x20, x21, [x0, #(10 * 16)]
+    ldp     x22, x23, [x0, #(11 * 16)]
+    ldp     x24, x25, [x0, #(12 * 16)]
+    ldp     x26, x27, [x0, #(13 * 16)]
+    ldp     x28, x29, [x0, #(14 * 16)]
     ldr     x30,      [x0, #(15 * 16)]
 
     // Load stack pointer to be restored after fetching x0/x1

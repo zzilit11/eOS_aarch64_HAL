@@ -26,12 +26,15 @@ void eos_init_mqueue(eos_mqueue_t *mq, void *queue_start, int16u_t queue_size, i
     mq->rear = 0;
     eos_init_semaphore(&mq->putsem, queue_size, queue_type);
     eos_init_semaphore(&mq->getsem, 0, queue_type);
+    PRINT("eos_init_mqueue: mq=%p buf=%p size=%u msg=%u type=%u\n", 
+        (void*)mq, queue_start, (int32u_t)queue_size, (int32u_t)msg_size, (int32u_t)queue_type);
 
 }
 
 
 int8u_t eos_send_message(eos_mqueue_t *mq, void *message, int32s_t timeout) 
 {
+    PRINT("eos_send_message: mq=%p msg=%p timeout=%d\n", (void*)mq, message, (int32u_t)timeout);
     // To be filled by students: Project 4
     int8u_t lock_flag;
 
@@ -39,11 +42,14 @@ int8u_t eos_send_message(eos_mqueue_t *mq, void *message, int32s_t timeout)
         PRINT("invalid args mq=%p msg=%p\n", (void*)mq, message);
         return 0;
     }
+    PRINT("HELLO1\n");
 
     /* get semaphore for writing to the message queue */
     if (eos_acquire_semaphore(&mq->putsem, timeout) == 0) {
         return 0;
     }
+
+    PRINT("HELLO2\n");
 
     lock_flag = eos_lock_scheduler();
 
@@ -62,9 +68,14 @@ int8u_t eos_send_message(eos_mqueue_t *mq, void *message, int32s_t timeout)
         dest[i] = src[i];
     }
 
+    PRINT("HELLO3\n");
+
     eos_restore_scheduler(lock_flag);
 
     eos_release_semaphore(&mq->getsem);
+
+    PRINT("Message sent to mq=%p\n", (void*)mq);
+    PRINT("front=%u, rear=%u\n", (int32u_t)mq->front, (int32u_t)mq->rear);
 
     return mq->msg_size;
 
