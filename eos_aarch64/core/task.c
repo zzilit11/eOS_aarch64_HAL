@@ -131,7 +131,7 @@ void eos_schedule()
     /* Restores the context of the next task */
     next_task->status = RUNNING;
     _os_current_task = next_task;
-    PRINT("Switching to task %p with priority %u\n", (void*)next_task, next_task->priority);
+    //PRINT("Switching to task %p with priority %u\n", (void*)next_task, next_task->priority);
     _os_restore_and_eret(next_task->sp);
 
     /* Never reaches here */
@@ -238,7 +238,7 @@ void eos_sleep(int32u_t tick)
             /* The current task is periodic */
             _os_current_task->wakeup_time += _os_current_task->period;
             if (_os_current_task->wakeup_time <= eos_get_system_timer()->tick) {
-                PRINT("There exist queued jobs, so execute them\n");
+                // PRINT("There exist queued jobs, so execute them\n");
                 return;
             }
             timeout = _os_current_task->wakeup_time - eos_get_system_timer()->tick;
@@ -251,7 +251,7 @@ void eos_sleep(int32u_t tick)
     _os_current_task->status = WAITING;
 
     /* Selects a task from the ready list and runs it */
-    PRINT("Task %p is going to sleep for %u ticks\n", (void*)_os_current_task, timeout);
+    //PRINT("Task %p is going to sleep for %u ticks\n", (void*)_os_current_task, timeout);
     eos_schedule();
 }
 

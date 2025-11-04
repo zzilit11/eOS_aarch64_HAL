@@ -145,7 +145,8 @@ int8u_t eos_lock_scheduler() {
 
 void eos_restore_scheduler(int8u_t scheduler_state) {
     PRINT("HELLO4\n");
-    _os_restore_scheduler(scheduler_state);
+    PRINT("scheduler_state: %u\n", (int32u_t)scheduler_state);
+    _os_restore_scheduler(scheduler_state); // <----------------------------------------
 }
 
 

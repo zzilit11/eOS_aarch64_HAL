@@ -23,6 +23,7 @@ void _os_init() //초기화 함수로, hal의 entry.S에서 호출됨
     // Interrupts and preemption must be disabled during initialziation
     hal_disable_interrupt(); // hal/interrupt_asm.s에 구현되어 있음. // 확인 완료(25/09/07-이종원)
     _os_scheduler_lock = LOCKED; //eos_internal.h에 int8u_t로 선언되어 있음 + scheduler.c에 정의되어 있음 // 확인 완료(25/09/07-이종원)
+    PRINT("_os_scheduler_locked: %u\n", (int8u_t)_os_scheduler_lock); // 초기 1로 설정되어 있음
 
     // Initializes subsystems
     _gic_init();
@@ -41,7 +42,8 @@ void _os_init() //초기화 함수로, hal의 entry.S에서 호출됨
 
     // Starts multitasking by enabling preemption and interrupts
     PRINT("Starts multitasking\n");
-    _os_scheduler_lock = UNLOCKED; 
+    _os_scheduler_lock = UNLOCKED; // UNLOCKED = 0
+    PRINT("_os_scheduler_locked: %u\n", (int8u_t)_os_scheduler_lock);
     hal_enable_interrupt(); 
 
     // Permanently gives control to the tasks in the ready queue
