@@ -49,6 +49,6 @@ SECTIONS {
     /* AArch64 ABI requires 16-byte stack alignment */
     . = ALIGN(16);
     __stack_bottom = .;
-    . += 0x4000;
+    . += 0x44000;
     __stack_top = .;  /* Stack top address (16KB stack) */
 }

@@ -87,8 +87,6 @@ idle_loop:
  * ===========================*/
 .section .vectors, "ax"
 .align  11
-.global vectors_el1
-.global __vectors_start
 __vectors_start:
 vectors_el1:
 
@@ -150,18 +148,21 @@ vectors_el1:
 /* =============================================
  * EL1 IRQ Handler with Full Context Save/Restore
  * ============================================= */
-.global el1_irq_spx_handler
 el1_irq_spx_handler:
-    // Save full EL1 context to a frame and get its pointer in x0
-    bl      _os_save_context         // x0 = context_ptr
-
-    // Read IRQ ID then call common C handler
-    mov     x1, x0                   // x1 = context_ptr (C arg2)
-    ldr     x2, =0x0801000C          // x2 = GIC_IAR address
-    ldr     w0, [x2]                 // w0 = irq number (C arg1)
+    bl      _os_save_context          // x0 = context_ptr
+    ldr     x1, =0x0801000C           // x1 = GIC_IAR
+    ldr     w1, [x1]                  // x1 = irq number
     bl      _os_common_interrupt_handler
+    b       _os_restore_and_eret
 
-    // Tail-call into restore-and-exit
+/* =============================================
+ * EL1 Sync Handler with Full Context Save/Restore
+ * ============================================= */
+el1_sync_spx:
+    bl      _os_save_context          // x0 = context_ptr
+    mrs     x1, ESR_EL1               // x1 = ESR_EL1
+    and     x1, x1, #0xFFFF           // x1 = SVC number
+    bl      _os_sync_exception_handler
     b       _os_restore_and_eret
 
 /* EL1 vector stubs: park CPU until implemented */
@@ -177,9 +178,6 @@ el1_fiq_sp0:
 el1_serr_sp0:  
     wfe
     b el1_serr_sp0
-el1_sync_spx:  
-    wfe
-    b el1_sync_spx
 el1_fiq_spx:   
     wfe
     b el1_fiq_spx
@@ -210,9 +208,3 @@ el1_fiq_a32:
 el1_serr_a32:  
     wfe
     b el1_serr_a32
-
-/* Hook points for real handlers:
- * - Replace each stub with context save, source decode, and dispatch.
- * - For IRQ paths, typically read GIC_IAR, call _os_common_interrupt_handler(w0=irq, x1=context).
- * - Ensure vector entries in __vectors_start point to these labels. */
-.extern _os_common_interrupt_handler

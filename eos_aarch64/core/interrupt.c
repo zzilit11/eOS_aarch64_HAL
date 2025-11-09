@@ -36,66 +36,32 @@ void _os_init_icb_table() // 확인 완료(25/09/07-이종원)
     }
 }
 
-
-static void copy_context(_os_context_t *dst, const _os_context_t *src)
-{
-    if (!dst || !src) {
-        return;
-    }
-
-    int64u_t *dst_words = (int64u_t *)dst;
-    const int64u_t *src_words = (const int64u_t *)src;
-    const size_t word_count = sizeof(_os_context_t) / sizeof(int64u_t);
-    const int64u_t dst_addr = (int64u_t)dst;
-    const int64u_t src_addr = (int64u_t)src;
-
-    if (dst_addr == src_addr) {
-        return;
-    }
-
-    if (dst_addr > src_addr && dst_addr < src_addr + sizeof(_os_context_t)) {
-        for (size_t i = word_count; i-- > 0;) {
-            dst_words[i] = src_words[i];
-        }
-        return;
-    }
-
-    for (size_t i = 0; i < word_count; ++i) {
-        dst_words[i] = src_words[i];
-    }
-}
-
-void save_current_task_sp(addr_t sp)
-{
-    eos_tcb_t *tcb = eos_get_current_task();
-    if (!tcb) {
-        return;
-    }
-
-    _os_context_t *dest = (_os_context_t *)tcb->sp;
-    const _os_context_t *src = (const _os_context_t *)sp;
-
-    if (!dest) {
-        return;
-    }
-
-    copy_context(dest, src);
-}
-
 // aarch64
-void _os_common_interrupt_handler(int32u_t irq_num, addr_t saved_context_ptr) {
+addr_t interrupted_context_ptr;
+void _os_common_interrupt_handler(addr_t saved_context_ptr, int32u_t irq_num) {
 
     /* Acknowledges the irq */
     hal_ack_irq(irq_num);
 
+    interrupted_context_ptr = saved_context_ptr;
+
     /* Dispatches the handler and call it */
     _os_icb_t *p = &_os_icb_table[irq_num];
     if (p->handler != NULL) {
-        save_current_task_sp(saved_context_ptr);
         p->handler(irq_num, p->arg); // timer_interrupt_handler 호출
     }
 }
 
+void _os_sync_exception_handler(addr_t saved_context_ptr, int32u_t svc_num) {
+    if (svc_num == 0) {
+        PRINT("SVC_YIELD called\n");
+        interrupted_context_ptr = saved_context_ptr;
+        PRINT("interrupted_context_ptr: %u\n", (int64u_t)interrupted_context_ptr);
+        eos_schedule();
+    } else {
+        PRINT("Unknown SVC number: %u\n", svc_num);
+    }
+}
 
 int8s_t eos_set_interrupt_handler(int8s_t irqnum, eos_interrupt_handler_t handler, void *arg)
 {

@@ -33,20 +33,6 @@ static eos_tcb_t *_os_current_task;
 
 int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_size, void (*entry)(void *arg), void *arg, int32u_t priority)
 {
-    /* Validate parameters */
-    if (task == NULL || entry == NULL) {
-        PRINT("invalid task(%p) or entry(%p)\n", (void*)task, (void*)entry);
-        return (int32u_t)-1;
-    }
-    if (priority > LOWEST_PRIORITY) {
-        PRINT("invalid priority=%u\n", priority);
-        return (int32u_t)-1;
-    }
-    if (sblock_start == 0 || sblock_size < MIN_STACK_SIZE) {
-        PRINT("invalid stack start(%p) or size(%zu)\n", (void*)sblock_start, sblock_size);
-        return (int32u_t)-1;
-    }
-
     // To be filled by students: Projects 2 and 3
 
     PRINT("task: %p, priority: %u\n", (void*)task, priority);
@@ -84,7 +70,13 @@ int32u_t eos_destroy_task(eos_tcb_t *task)
     // To be filled by students: not covered
 }
 
+void eos_yield(void)
+{
+    asm volatile("svc 0");
+    PRINT("Returned from eos_yield\n");
+}
 
+extern addr_t interrupted_context_ptr;
 void eos_schedule()
 {
     /* Checks if the scheduler is locked */
@@ -104,13 +96,14 @@ void eos_schedule()
             _os_set_ready(_os_current_task->priority);
             _os_current_task->status = READY;
         }
-    PRINT("Saving context of current task %p with priority %u\n", (void*)_os_current_task, _os_current_task->priority);
 
-    /* Saves the current context */
-    addr_t sp = _os_save_context();
-    if (!sp) {
-        return;  // Return to the preemption point after restoring context
-    }
+        /* Saves the current context */
+        addr_t sp = interrupted_context_ptr;
+        if (!sp) {
+            addr_t link_register = 0;
+            asm volatile("mov %0, lr" : "=r"(link_register)); 
+            sp = _os_save_context_el1(link_register);
+        }
 
     /* Saves the stack pointer in the tcb */
     _os_current_task->sp = sp;
@@ -118,7 +111,6 @@ void eos_schedule()
         /* Reaches here when eOS call eos_schedule(): Only runs the next task */
     }
 
-    PRINT("Scheduling...\n");
     /* Selects the next task to run */
     int32u_t highest_priority = _os_get_highest_priority();
     _os_node_t *node = _os_ready_queue[highest_priority];
@@ -132,7 +124,7 @@ void eos_schedule()
     /* Restores the context of the next task */
     next_task->status = RUNNING;
     _os_current_task = next_task;
-    PRINT("Switching to task %p with priority %u\n", (void*)next_task, next_task->priority);
+    interrupted_context_ptr = 0;
     _os_restore_and_eret(next_task->sp);
 
     /* Never reaches here */
@@ -239,7 +231,7 @@ void eos_sleep(int32u_t tick)
             /* The current task is periodic */
             _os_current_task->wakeup_time += _os_current_task->period;
             if (_os_current_task->wakeup_time <= eos_get_system_timer()->tick) {
-                PRINT("There exist queued jobs, so execute them\n");
+                // PRINT("There exist queued jobs, so execute them\n");
                 return;
             }
             timeout = _os_current_task->wakeup_time - eos_get_system_timer()->tick;
@@ -252,6 +244,7 @@ void eos_sleep(int32u_t tick)
     _os_current_task->status = WAITING;
 
     /* Selects a task from the ready list and runs it */
+    PRINT("Task %p is going to sleep for %u ticks\n", (void*)_os_current_task, timeout);
     eos_schedule();
 }
 
@@ -271,13 +264,6 @@ void _os_init_task() // 확인 완료 (25/09/07-이종원)
 
 
 void _os_wait_in_queue(_os_node_t **wait_queue, int8u_t queue_type)
-// 역할: 현재 실행 중인 태스크를 지정된 대기 큐에 삽입하고, 
-// 해당 태스크를 WAITING 상태로 변경한 후, 
-// 스케줄러를 호출하여 다른 태스크를 실행
-// wait_queue: 대기 큐의 헤드 노드를 가리키는 포인터 변수의 주소 -> *wait_queue는 헤드 노드의 주소, **wait_queue는 헤드 노드 자체
-// 어떤 wait_queue에 삽입될지가, 이때의 input으로 받는 값에 의해 결정 (ex) sem->wait_queue, cond->wait_queue 등)
-// queue_type: 대기 큐에서 테스크를 선택하는 기준을 지정 -> 0: FIFO, 1: 우선순위 기반
-
 {
     // To be filled by students: Project 4
     if (!queue_type) { // FIFO 방식
@@ -290,7 +276,6 @@ void _os_wait_in_queue(_os_node_t **wait_queue, int8u_t queue_type)
 
     _os_current_task->wait_queue_owner = wait_queue;
     _os_current_task->status = WAITING;
-
     
     eos_schedule();
 

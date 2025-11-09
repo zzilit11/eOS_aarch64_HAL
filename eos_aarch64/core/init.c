@@ -41,7 +41,7 @@ void _os_init() //초기화 함수로, hal의 entry.S에서 호출됨
 
     // Starts multitasking by enabling preemption and interrupts
     PRINT("Starts multitasking\n");
-    _os_scheduler_lock = UNLOCKED; 
+    _os_scheduler_lock = UNLOCKED; // UNLOCKED = 0
     hal_enable_interrupt(); 
 
     // Permanently gives control to the tasks in the ready queue
