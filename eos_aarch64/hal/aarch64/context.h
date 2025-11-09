@@ -1,10 +1,10 @@
 #ifndef CONTEXT_H_
 #define CONTEXT_H_
 
-#define CTX_SIZE sizeof(_os_context_t) // 272
-#define CTX_OFF_SP   (31*8)            // 248
-#define CTX_OFF_ELR  (31*8 + 8)        // 256
-#define CTX_OFF_SPSR (31*8 + 16)       // 264
+#define CTX_SIZE      272
+#define CTX_OFF_SP    248
+#define CTX_OFF_ELR   256
+#define CTX_OFF_SPSR  264
 
 #include "type.h"
 
@@ -18,5 +18,9 @@ typedef struct _os_context {
 void print_context(addr_t ctx_addr);
 
 addr_t _os_create_context(addr_t stack_base, size_t stack_size, void (*entry)(void *), void *arg);
+
+addr_t _os_save_context(void);
+void   _os_restore_and_eret(addr_t ctx);
+addr_t _os_save_context_el1(addr_t elr);
 
 #endif // CONTEXT_H_

@@ -264,13 +264,6 @@ void _os_init_task() // 확인 완료 (25/09/07-이종원)
 
 
 void _os_wait_in_queue(_os_node_t **wait_queue, int8u_t queue_type)
-// 역할: 현재 실행 중인 태스크를 지정된 대기 큐에 삽입하고, 
-// 해당 태스크를 WAITING 상태로 변경한 후, 
-// 스케줄러를 호출하여 다른 태스크를 실행
-// wait_queue: 대기 큐의 헤드 노드를 가리키는 포인터 변수의 주소 -> *wait_queue는 헤드 노드의 주소, **wait_queue는 헤드 노드 자체
-// 어떤 wait_queue에 삽입될지가, 이때의 input으로 받는 값에 의해 결정 (ex) sem->wait_queue, cond->wait_queue 등)
-// queue_type: 대기 큐에서 테스크를 선택하는 기준을 지정 -> 0: FIFO, 1: 우선순위 기반
-
 {
     // To be filled by students: Project 4
     if (!queue_type) { // FIFO 방식
@@ -283,7 +276,6 @@ void _os_wait_in_queue(_os_node_t **wait_queue, int8u_t queue_type)
 
     _os_current_task->wait_queue_owner = wait_queue;
     _os_current_task->status = WAITING;
-
     
     eos_schedule();
 
