@@ -11,7 +11,7 @@
 .type _os_save_context, %function
 _os_save_context:
     // Allocate frame
-    sub     sp, sp, #CTX_SIZE           // 커널 전용 stack 사용 (일반적 설정)
+    sub     sp, sp, #CTX_SIZE           
 
     // Save GPRs x0-x30 in ABI order
     stp     x0,  x1,  [sp, #(0 * 16)]
@@ -83,3 +83,43 @@ _os_restore_and_eret:
     isb
     eret // ret - excetion level 안바꾸는 명령어
 .size _os_restore_and_eret, . - _os_restore_and_eret
+
+// Save caller context into a stack frame and return its base in x0
+.global _os_save_context_el1
+.type _os_save_context_el1, %function
+_os_save_context_el1:
+    // Allocate frame
+    sub    sp, sp, #CTX_SIZE
+
+    str x0, [sp, #CTX_OFF_ELR]   // 가 맞는 형태
+
+    // Save GPRs x0-x30 in ABI order
+    stp     x0,  x1,  [sp, #(0 * 16)]
+    stp     x2,  x3,  [sp, #(1 * 16)]
+    stp     x4,  x5,  [sp, #(2 * 16)]
+    stp     x6,  x7,  [sp, #(3 * 16)]
+    stp     x8,  x9,  [sp, #(4 * 16)]
+    stp     x10, x11, [sp, #(5 * 16)]
+    stp     x12, x13, [sp, #(6 * 16)]
+    stp     x14, x15, [sp, #(7 * 16)]
+    stp     x16, x17, [sp, #(8 * 16)]
+    stp     x18, x19, [sp, #(9 * 16)]
+    stp     x20, x21, [sp, #(10 * 16)]
+    stp     x22, x23, [sp, #(11 * 16)]
+    stp     x24, x25, [sp, #(12 * 16)]
+    stp     x26, x27, [sp, #(13 * 16)]
+    stp     x28, x29, [sp, #(14 * 16)]
+    str     x30,      [sp, #(15 * 16)]    // LR
+
+    // Save original SP and exception context
+    add     x1, sp, #CTX_SIZE            // x1 = original SP before sub
+    str     x1,      [sp, #CTX_OFF_SP]  
+    //mrs     x1, ELR_EL1
+    //str     x1,      [sp, #CTX_OFF_ELR]
+    mrs     x1, SPSR_EL1
+    str     x1,      [sp, #CTX_OFF_SPSR]
+
+    // Return context base in x0
+    mov     x0, sp
+    ret
+.size _os_save_context_el1, . - _os_save_context_el1

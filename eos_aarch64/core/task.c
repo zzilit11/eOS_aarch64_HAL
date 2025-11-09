@@ -33,20 +33,6 @@ static eos_tcb_t *_os_current_task;
 
 int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start, size_t sblock_size, void (*entry)(void *arg), void *arg, int32u_t priority)
 {
-    /* Validate parameters */
-    if (task == NULL || entry == NULL) {
-        PRINT("invalid task(%p) or entry(%p)\n", (void*)task, (void*)entry);
-        return (int32u_t)-1;
-    }
-    if (priority > LOWEST_PRIORITY) {
-        PRINT("invalid priority=%u\n", priority);
-        return (int32u_t)-1;
-    }
-    if (sblock_start == 0 || sblock_size < MIN_STACK_SIZE) {
-        PRINT("invalid stack start(%p) or size(%zu)\n", (void*)sblock_start, sblock_size);
-        return (int32u_t)-1;
-    }
-
     // To be filled by students: Projects 2 and 3
 
     PRINT("task: %p, priority: %u\n", (void*)task, priority);
@@ -84,7 +70,13 @@ int32u_t eos_destroy_task(eos_tcb_t *task)
     // To be filled by students: not covered
 }
 
+void eos_yield(void)
+{
+    asm volatile("svc 0");
+    PRINT("Returned from eos_yield\n");
+}
 
+extern addr_t interrupted_context_ptr;
 void eos_schedule()
 {
     /* Checks if the scheduler is locked */
@@ -106,9 +98,11 @@ void eos_schedule()
         }
 
         /* Saves the current context */
-        addr_t sp = _os_save_context();
+        addr_t sp = interrupted_context_ptr;
         if (!sp) {
-            return;  // Return to the preemption point after restoring context
+            addr_t link_register = 0;
+            asm volatile("mov %0, lr" : "=r"(link_register)); 
+            sp = _os_save_context_el1(link_register);
         }
 
     /* Saves the stack pointer in the tcb */
@@ -130,7 +124,7 @@ void eos_schedule()
     /* Restores the context of the next task */
     next_task->status = RUNNING;
     _os_current_task = next_task;
-    //PRINT("Switching to task %p with priority %u\n", (void*)next_task, next_task->priority);
+    interrupted_context_ptr = 0;
     _os_restore_and_eret(next_task->sp);
 
     /* Never reaches here */
@@ -250,7 +244,7 @@ void eos_sleep(int32u_t tick)
     _os_current_task->status = WAITING;
 
     /* Selects a task from the ready list and runs it */
-    //PRINT("Task %p is going to sleep for %u ticks\n", (void*)_os_current_task, timeout);
+    PRINT("Task %p is going to sleep for %u ticks\n", (void*)_os_current_task, timeout);
     eos_schedule();
 }
 

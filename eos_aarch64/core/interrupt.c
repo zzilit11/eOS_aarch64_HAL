@@ -37,15 +37,29 @@ void _os_init_icb_table() // 확인 완료(25/09/07-이종원)
 }
 
 // aarch64
-void _os_common_interrupt_handler(int32u_t irq_num, addr_t saved_context_ptr) {
+addr_t interrupted_context_ptr;
+void _os_common_interrupt_handler(addr_t saved_context_ptr, int32u_t irq_num) {
 
     /* Acknowledges the irq */
     hal_ack_irq(irq_num);
+
+    interrupted_context_ptr = saved_context_ptr;
 
     /* Dispatches the handler and call it */
     _os_icb_t *p = &_os_icb_table[irq_num];
     if (p->handler != NULL) {
         p->handler(irq_num, p->arg); // timer_interrupt_handler 호출
+    }
+}
+
+void _os_sync_exception_handler(addr_t saved_context_ptr, int32u_t svc_num) {
+    if (svc_num == 0) {
+        PRINT("SVC_YIELD called\n");
+        interrupted_context_ptr = saved_context_ptr;
+        PRINT("interrupted_context_ptr: %u\n", (int64u_t)interrupted_context_ptr);
+        eos_schedule();
+    } else {
+        PRINT("Unknown SVC number: %u\n", svc_num);
     }
 }
 

@@ -1,0 +1,38 @@
+[    interrupt.c:            _os_init_icb_table] Initializing interrupt module
+[    scheduler.c:            _os_init_scheduler] Initializing scheduler module
+[         task.c:                 _os_init_task] Initializing task module
+[        timer.c:                _os_init_timer] Initializing timer module
+[    interrupt.c:     eos_set_interrupt_handler] irqnum: 30, handler: 0000000040081098, arg: 0000000000000000
+[         init.c:                      _os_init] Creating an idle task
+[         task.c:               eos_create_task] task: 0000000040084530, priority: 63
+[         task.c:               eos_create_task] task: 0000000040086b20, priority: 50
+[         task.c:               eos_create_task] task: 0000000040086ba0, priority: 20
+[         task.c:               eos_create_task] task: 0000000040086c20, priority: 10
+[         comm.c:               eos_init_mqueue] eos_init_mqueue: mq=0000000040086ad8 buf=0000000040086ca0 size=5 msg=2 type=1
+[         comm.c:               eos_init_mqueue] eos_init_mqueue: mq=0000000040086a90 buf=0000000040086cc8 size=5 msg=2 type=1
+[         init.c:                      _os_init] Starts multitasking
+[work_assignment4.c:                receiver_task2] receive message from mq2
+[work_assignment4.c:                receiver_task1] receive message from mq1
+[work_assignment4.c:                   sender_task] send message to mq1
+[        timer.c:           eos_trigger_counter] system clock: 1
+[        timer.c:           eos_trigger_counter] system clock: 2
+[        timer.c:           eos_trigger_counter] system clock: 3
+[        timer.c:           eos_trigger_counter] system clock: 4
+[        timer.c:           eos_trigger_counter] system clock: 5
+[        timer.c:           eos_trigger_counter] system clock: 6
+[        timer.c:           eos_trigger_counter] system clock: 7
+[        timer.c:           eos_trigger_counter] system clock: 8
+[        timer.c:           eos_trigger_counter] system clock: 9
+[        timer.c:           eos_trigger_counter] system clock: 10
+[        timer.c:           eos_trigger_counter] system clock: 11
+[        timer.c:           eos_trigger_counter] system clock: 12
+[        timer.c:           eos_trigger_counter] system clock: 13
+[        timer.c:           eos_trigger_counter] system clock: 14
+[        timer.c:           eos_trigger_counter] system clock: 15
+[        timer.c:           eos_trigger_counter] system clock: 16
+[        timer.c:           eos_trigger_counter] system clock: 17
+[        timer.c:           eos_trigger_counter] system clock: 18
+[        timer.c:           eos_trigger_counter] system clock: 19
+[        timer.c:           eos_trigger_counter] system clock: 20
+[        timer.c:           eos_trigger_counter] system clock: 21
+qemu-system-aarch64: terminating on signal 2

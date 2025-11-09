@@ -16,7 +16,8 @@ void print_numbers(void *arg)
     int i = 1;
     while (1) {
         eos_printf("%d\n", i);
-        eos_schedule();
+        eos_yield();
+        //eos_schedule();
         if (i++ == 20) {
             i = 1;
         }
@@ -33,7 +34,8 @@ static void print_alphabet(void *arg)
     while (1)
     {
         eos_printf("%c\n", i);
-        eos_schedule();
+        eos_yield();
+        //eos_schedule();
         if (i++ == 122)
         {
             i = 97;
@@ -41,7 +43,7 @@ static void print_alphabet(void *arg)
     }
 }
 
-void eos_user_main()
+void eos_user_main2()
 {
     /*
      * This is the test code for Project 2

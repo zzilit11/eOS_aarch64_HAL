@@ -262,6 +262,7 @@ int32u_t eos_create_task(eos_tcb_t *task, addr_t sblock_start,
 
 int32u_t eos_destroy_task(eos_tcb_t *task);
 
+void eos_yield(void);
 void eos_schedule();
 
 eos_tcb_t *eos_get_current_task();

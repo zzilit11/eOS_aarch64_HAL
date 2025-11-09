@@ -75,7 +75,9 @@ void _os_serial_puts(const char *s);
 /* The common interrupt handler:
  * 	Invoked by HAL whenever an interrupt occurrs.
  */
-void _os_common_interrupt_handler(int32u_t irq, addr_t saved_context_ptr);
+void _os_common_interrupt_handler(addr_t saved_context_ptr, int32u_t irq_num);
+
+void _os_sync_exception_handler(addr_t saved_context_ptr, int32u_t svc_num);
 
 
 /********************************************************

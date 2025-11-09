@@ -16,6 +16,7 @@ void task0()
         eos_sleep(0);
     } // ‘A 출력 후 다음 주기까지 기다림
 }
+
 void task1()
 {
     while (1)
@@ -24,6 +25,7 @@ void task1()
         eos_sleep(0);
     } // ‘B’ 출력 후 다음 주기까지 기다림
 }
+
 void task2()
 {
     while (1)
